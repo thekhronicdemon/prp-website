@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Progression RP</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="bg-glow"></div>
+  <header class="nav">
+    <div class="brand">
+      <img src="assets/logo.png" alt="Progression RP Logo" />
+      <div><strong>PROGRESSION RP</strong><span>FiveM Roleplay</span></div>
+    </div>
+    <nav>
+      <a href="#home">Home</a><a href="#shop">Shop</a><a href="#join">Join</a><a href="#account">Account</a><a href="#admin">Admin</a>
+    </nav>
+  </header>
+
+  <main>
+    <section id="home" class="hero">
+      <div>
+        <p class="pill">BETA OPENING SOON</p>
+        <h1>Build your story in <span>Progression RP</span>.</h1>
+        <p class="lead">A serious but enjoyable FiveM roleplay city built around progression, community feedback, quality systems, and long-term growth.</p>
+        <div class="actions"><a class="btn primary" id="joinBtn" href="#">Join FiveM Server</a><a class="btn" href="#">Join Discord</a></div>
+      </div>
+      <div class="logo-card"><img src="assets/logo.png" alt="PRP Logo" /><div class="features"><b>Custom Jobs</b><b>Active Staff</b><b>Balanced Economy</b><b>Community Driven</b></div></div>
+    </section>
+
+    <section id="shop" class="section">
+      <p class="eyebrow">SUPPORT THE CITY</p><h2>Server Priority Shop</h2>
+      <div class="cards">
+        <div class="card"><h3>Priority Bronze</h3><p class="price">$10 <small>/ monthly</small></p><ul><li>Basic queue priority</li><li>Discord supporter role</li><li>Monthly supporter badge</li></ul><button>Purchase</button></div>
+        <div class="card popular"><em>Popular</em><h3>Priority Gold</h3><p class="price">$20 <small>/ monthly</small></p><ul><li>Higher queue priority</li><li>Exclusive Discord role</li><li>Supporter chat access</li></ul><button>Purchase</button></div>
+        <div class="card"><h3>Priority Elite</h3><p class="price">$50 <small>/ monthly</small></p><ul><li>Top queue priority</li><li>Elite Discord role</li><li>Priority support ticket handling</li></ul><button>Purchase</button></div>
+      </div>
+      <p class="note">Use Tebex, Stripe Checkout, or another secure provider for real payments. Do not process cards directly on GitHub Pages.</p>
+    </section>
+
+    <section id="join" class="panel">
+      <h2>Direct FiveM Join Link</h2>
+      <p>Change this to your real FiveM endpoint.</p>
+      <input id="serverIp" value="YOUR_SERVER_IP:30120" />
+      <a class="btn primary" id="openFiveM" href="#">Open FiveM</a>
+    </section>
+
+    <section id="account" class="auth">
+      <h2>Account Access</h2>
+      <div class="tabs"><button onclick="setMode('login')">Login</button><button onclick="setMode('signup')">Signup</button><button onclick="setMode('forgot')">Forgot Password</button></div>
+      <form onsubmit="event.preventDefault(); alert('Demo only: connect Supabase/Firebase for real auth.');">
+        <input id="username" placeholder="Username" />
+        <input placeholder="Email address" type="email" required />
+        <input id="password" placeholder="Password" type="password" />
+        <button class="primary" id="authSubmit">Login</button>
+      </form>
+      <p class="note">Email verification, forgot password, and admin permissions need a real backend like Supabase or Firebase.</p>
+    </section>
+
+    <section id="admin" class="section">
+      <p class="eyebrow">ADMIN ACCESS</p><h2>Website Control Panel</h2>
+      <div class="admin-grid"><div>Active Users <b>128</b></div><div>Pending Tickets <b>14</b></div><div>Monthly Revenue <b>$1,240</b></div><div>Server Status <b>Online</b></div></div>
+    </section>
+  </main>
+
+  <footer>© Progression RP. All rights reserved.</footer>
+  <script src="script.js"></script>
+</body>
+</html>
