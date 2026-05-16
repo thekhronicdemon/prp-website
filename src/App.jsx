@@ -104,20 +104,6 @@ function App() {
   }
 
   async function handleLogout() {
-    setMessage("Logging out...");
-
-    const { error } = await supabase.auth.signOut({
-      scope: "local",
-    });
-
-    if (error) {
-      setMessage(error.message);
-      return;
-    }
-
-    localStorage.clear();
-    sessionStorage.clear();
-
     setUser(null);
     setIsAdmin(false);
     setEmail("");
@@ -125,7 +111,13 @@ function App() {
     setUsername("");
     setMessage("Logged out.");
 
-    window.location.href = `${import.meta.env.BASE_URL}`;
+    try {
+      await supabase.auth.signOut({ scope: "local" });
+    } catch (error) {
+      console.log("Logout error:", error);
+    }
+
+    window.location.href = "/";
   }
 
   async function handleAuthSubmit(e) {
