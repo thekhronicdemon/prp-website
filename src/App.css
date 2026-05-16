@@ -94,44 +94,68 @@ button, input {
   line-height:.9;
 }
 
-.brand strong{
-    font-family:'Cinzel',serif;
-    font-size:36px;
-    font-weight:900;
-    text-transform:uppercase;
+.brand{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    text-decoration:none;
+}
 
-    letter-spacing:1px;
+.brand img{
+    width:64px;
+    height:64px;
+    object-fit:contain;
+}
+
+.brand div{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+}
+
+.brand strong{
+    font-family:'Cinzel', serif;
+    font-size:52px;
+    font-weight:900;
+    line-height:.85;
+
+    letter-spacing:2px;
+    text-transform:uppercase;
 
     background:linear-gradient(
       to bottom,
-      #fffbe1 0%,
-      #ffe894 15%,
-      #ffc93c 40%,
-      #d69d18 70%,
-      #7b4e00 100%
+      #fffdf4 0%,
+      #fff1b0 10%,
+      #ffd24f 35%,
+      #f0b018 55%,
+      #9f6800 100%
     );
 
     -webkit-background-clip:text;
     -webkit-text-fill-color:transparent;
 
-    filter:drop-shadow(0 0 10px rgba(255,190,0,.35));
+    text-shadow:
+        0 1px 0 #fff7d0,
+        0 2px 0 #cc8e00,
+        0 0 18px rgba(255,190,0,.45);
 
-    margin-bottom:2px;
+    margin:0;
 }
 
 .brand span{
-    font-family:'Cinzel',serif;
+    font-family:'Cinzel', serif;
 
-    font-size:13px;
-    font-weight:700;
+    margin-top:8px;
 
-    letter-spacing:7px;
+    font-size:14px;
 
-    color:#d6a62d;
+    letter-spacing:9px;
+
+    color:#d7a52d;
 
     text-transform:uppercase;
 
-    margin-left:4px;
+    font-weight:700;
 }
 
 .nav nav {
