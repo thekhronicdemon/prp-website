@@ -45,17 +45,24 @@ function App() {
       .from("profiles")
       .select("*")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
+
+    console.log("PROFILE RESULT:", { data, error });
 
     if (error) {
-      console.log("PROFILE ERROR:", error);
-      return;
+      setMessage(error.message);
+      return null;
     }
 
-    console.log("PROFILE DATA:", data);
+    if (!data) {
+      setProfile(null);
+      return null;
+    }
 
-    setProfile({ ...data });
+    setProfile(data);
     setIsAdmin(data.role === "admin");
+
+    return data;
   }
 
   async function createProfileIfMissing(authUser, fallbackUsername = "") {
@@ -312,7 +319,7 @@ function App() {
       .from("admin_stats")
       .select("active_users,tickets,revenue,server_status")
       .eq("id", 1)
-      .single();
+      .maybeSingle();
 
     if (data) setAdminStats(data);
   }
@@ -819,7 +826,7 @@ function AccountPage({
             <div className="accountInfo">
               <div>
                 <span>Username</span>
-                <strong>{profile?.username ? profile.username : "Not set"}</strong>
+                <strong>{profile?.username || user?.user_metadata?.username || "Not set"}</strong>
               </div>
 
               <div>
