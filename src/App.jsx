@@ -381,37 +381,37 @@ function App() {
       window.removeEventListener("focus", focusRefresh);
     };
   }, []);
+  
   useEffect(() => {
-    if (!user?.id) return;
+  if (!user?.id) return;
 
-    const channel = supabase
-      .channel(`profile-live-${user.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "profiles",
-          filter: `id=eq.${user.id}`,
-        },
-        (payload) => {
-          if (payload.new) {
-            setProfile(payload.new);
-            setIsAdmin(payload.new.role === "admin");
-          }
+  loadProfile(user.id);
+
+  const channel = supabase
+    .channel(`profile-live-${user.id}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "profiles",
+        filter: `id=eq.${user.id}`,
+      },
+      (payload) => {
+        console.log("LIVE PROFILE UPDATE:", payload);
+
+        if (payload.new) {
+          setProfile(payload.new);
+          setIsAdmin(payload.new.role === "admin");
         }
-      )
-      .subscribe();
+      }
+    )
+    .subscribe();
 
-    const interval = setInterval(() => {
-      loadProfile(user.id);
-    }, 5000);
-
-    return () => {
-      supabase.removeChannel(channel);
-      clearInterval(interval);
-    };
-  }, [user?.id]);
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [user?.id]);
 
   const openFiveM = () => {
     window.location.href = `fivem://connect/${SERVER_IP}`;
