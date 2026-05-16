@@ -105,11 +105,23 @@ function App() {
 
   async function handleLogout() {
 
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      console.log(error);
+      return;
+    }
 
     setUser(null);
-
     setIsAdmin(false);
+
+    setEmail("");
+    setPassword("");
+    setUsername("");
+
+    setMessage("Logged out.");
+
+    window.location.reload();
 
   }
 
