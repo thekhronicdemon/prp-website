@@ -247,7 +247,7 @@ function App() {
                   )}
 
                   <button className="primaryBtn" type="submit">
-                    {authMode === "login" ? "Login" : authMode === "signup" ? "Create Account" : "Requst Password Reset"}
+                    {authMode === "login" ? "Login" : authMode === "signup" ? "Create Account" : "Request Password Reset"}
                   </button>
                 </form>
               </>
