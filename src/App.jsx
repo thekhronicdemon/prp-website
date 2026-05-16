@@ -331,10 +331,12 @@ function App() {
   useEffect(() => {
     async function init() {
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      setUser(user ?? null);
+      const user = session?.user ?? null;
+
+      setUser(user);
 
       if (user) {
         await createProfileIfMissing(user);
@@ -365,8 +367,10 @@ function App() {
 
     const focusRefresh = async () => {
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const user = session?.user ?? null;
 
       if (user) {
         await loadProfile(user.id);
