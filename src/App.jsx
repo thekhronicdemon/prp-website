@@ -4,7 +4,7 @@ import { supabase } from "./supabaseClient";
 const SITE_URL = "https://thekhronicdemon.github.io/prp-website";
 
 function App() {
-  const SERVER_IP = "localhost:40120";
+  const SERVER_IP = "localhost:30120";
   const [authMode, setAuthMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
