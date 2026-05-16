@@ -181,7 +181,7 @@ function App() {
 
             <div className="actions">
               <button className="btn primary" onClick={openFiveM}>Join FiveM Server</button>
-              <a className="btn" href="https://discord.gg/" target="_blank" rel="noreferrer">Join Discord</a>
+              <a className="btn" href="https://discord.gg/Vt4R9pWg2Z" target="_blank" rel="noreferrer">Join Discord</a>
             </div>
           </div>
 
