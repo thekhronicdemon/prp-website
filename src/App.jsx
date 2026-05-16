@@ -120,7 +120,7 @@ function App() {
 
       <header className="nav">
         <a className="brand" href="#home">
-          <img src={`${import.meta.env.BASE_URL}assets/logo.png`} />
+          <img src={`${import.meta.env.BASE_URL}assets/logo.png`} alt="Logo" />
           <div>
             <strong>PROGRESSION RP</strong>
             <span>FiveM Roleplay</span>
@@ -155,7 +155,7 @@ function App() {
           </div>
 
           <div className="logoCard">
-            <img src={`${import.meta.env.BASE_URL}assets/logo.png`} />
+            <img src={`${import.meta.env.BASE_URL}assets/logo.png`} alt="Logo" />
             <div className="features">
               <b>Custom Jobs</b>
               <b>Active Staff</b>
