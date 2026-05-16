@@ -1,18 +1,27 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&display=swap');
 
 * {
+  margin: 0;
+  padding: 0;
   box-sizing: border-box;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
-body {
-  margin: 0;
+html,
+body,
+#root {
+  min-height: 100%;
   background: #080808;
   color: white;
   font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
 }
 
 button,
@@ -31,7 +40,8 @@ input {
   border-radius: 999px;
   filter: blur(80px);
   pointer-events: none;
-  opacity: 0.45;
+  opacity: .45;
+  z-index: 0;
 }
 
 .bgGlow.one {
@@ -51,112 +61,97 @@ input {
 }
 
 .nav {
-  position: relative;
-  z-index: 5;
+  position: sticky;
+  top: 0;
+  z-index: 100;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 22px 7%;
-  background: rgba(10, 10, 10, 0.82);
+  background: rgba(10, 10, 10, .82);
   backdrop-filter: blur(14px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
 }
 
-.brand{
-    display:flex;
-    align-items:center;
-    gap:14px;
-    text-decoration:none;
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none;
 }
 
-.brand img{
-    width:58px;
-    height:58px;
-    object-fit:contain;
+.brand img {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
 }
 
-.brand div{
-    display:flex;
-    flex-direction:column;
-
-    align-items:flex-start;
-
-    position:relative;
+.brand div {
+  display: flex;
+  flex-direction: column;
+  position: relative;
 }
 
-.brand strong{
+.brand strong {
+  font-family: 'Cinzel', serif;
+  font-size: 36px;
+  font-weight: 900;
+  line-height: .9;
+  letter-spacing: 1px;
+  text-transform: uppercase;
 
-    font-family:'Cinzel', serif;
+  background: linear-gradient(to bottom,
+      #fffce8 0%,
+      #ffe98d 18%,
+      #ffc839 50%,
+      #a66a00 100%);
 
-    font-size:36px;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 
-    font-weight:900;
-
-    line-height:.9;
-
-    letter-spacing:1px;
-
-    text-transform:uppercase;
-
-    background:linear-gradient(
-        to bottom,
-        #fffce8 0%,
-        #ffe98d 18%,
-        #ffc839 50%,
-        #a66a00 100%
-    );
-
-    -webkit-background-clip:text;
-    -webkit-text-fill-color:transparent;
-
-    text-shadow:
-    0 0 8px rgba(255,200,80,.18);
-
-    margin:0;
+  text-shadow:
+    0 0 8px rgba(255, 200, 80, .18);
 }
 
-.brand span{
+.brand span {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 8px;
+  color: #d6a62d;
 
-    font-family:'Cinzel',serif;
+  width: 100%;
+  text-align: center;
 
-    font-size:12px;
-
-    font-weight:700;
-
-    letter-spacing:8px;
-
-    color:#ffffff;
-
-    text-transform:uppercase;
-
-    width:100%;
-
-    text-align:center;
-
-    margin-top:2px;
+  margin-left: 60px;
+  margin-top: 2px;
 }
 
 .nav nav {
   display: flex;
   gap: 26px;
+  align-items: center;
 }
 
 .nav nav a {
   color: #d8d8d8;
-  text-decoration: none;
   font-size: 14px;
+  transition: .25s;
 }
 
 .nav nav a:hover {
   color: #ffd766;
 }
 
-.hero {
+main {
   position: relative;
   z-index: 2;
+}
+
+.hero {
   min-height: 78vh;
   display: grid;
-  grid-template-columns: 1.12fr 0.88fr;
+  grid-template-columns: 1.12fr .88fr;
   gap: 50px;
   align-items: center;
   padding: 80px 7%;
@@ -166,8 +161,8 @@ input {
 .eyebrow {
   display: inline-block;
   color: #ffd766;
-  background: rgba(212, 175, 55, 0.12);
-  border: 1px solid rgba(212, 175, 55, 0.25);
+  background: rgba(212, 175, 55, .12);
+  border: 1px solid rgba(212, 175, 55, .25);
   padding: 9px 14px;
   border-radius: 999px;
   font-size: 12px;
@@ -177,13 +172,13 @@ input {
 
 h1 {
   font-size: clamp(46px, 7vw, 86px);
-  line-height: 0.95;
+  line-height: .95;
   margin: 18px 0;
 }
 
 h1 span {
   color: #d4af37;
-  text-shadow: 0 0 28px rgba(212, 175, 55, 0.35);
+  text-shadow: 0 0 28px rgba(212, 175, 55, .35);
 }
 
 h2 {
@@ -192,8 +187,7 @@ h2 {
 }
 
 .lead,
-.sectionText,
-.panel p {
+.sectionText {
   color: #c7c7c7;
   line-height: 1.75;
   font-size: 17px;
@@ -203,274 +197,300 @@ h2 {
 .actions {
   display: flex;
   gap: 14px;
-  flex-wrap: wrap;
   margin-top: 32px;
+  flex-wrap: wrap;
 }
 
 .btn,
 .primaryBtn,
-.card button,
-.joinBox button {
+.card button {
+
   border: 0;
   cursor: pointer;
+
   padding: 14px 20px;
+
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.08);
+
+  background: rgba(255, 255, 255, .08);
+
   color: white;
-  text-decoration: none;
-  display: inline-flex;
+
+  display: flex;
   justify-content: center;
   align-items: center;
+
   font-weight: bold;
+
+  transition: .25s;
 }
 
-.primary,
 .primaryBtn,
+.primary,
 .card button {
-  background: linear-gradient(135deg, #ffe08a, #d4af37, #9b6b00);
-  color: #090909;
+
+  background:
+    linear-gradient(135deg,
+      #ffe08a,
+      #d4af37,
+      #9b6b00);
+
+  color: black;
+
 }
 
 .logoCard {
-  background: rgba(20, 20, 20, 0.76);
-  border: 1px solid rgba(212, 175, 55, 0.18);
-  border-radius: 34px;
-  padding: 34px;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
-  text-align: center;
-}
 
-.logoCard img {
-  width: min(70%, 300px);
-  filter: drop-shadow(0 0 38px rgba(212, 175, 55, 0.36));
+  background: rgba(20, 20, 20, .76);
+
+  border: 1px solid rgba(212, 175, 55, .18);
+
+  border-radius: 34px;
+
+  padding: 34px;
+
 }
 
 .features {
+
   display: grid;
+
   grid-template-columns: 1fr 1fr;
+
   gap: 12px;
-  margin-top: 24px;
+
 }
 
 .features b {
-  background: rgba(255, 255, 255, 0.06);
+
   padding: 16px;
+
   border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  background: rgba(255, 255, 255, .06);
+
+  border: 1px solid rgba(255, 255, 255, .08);
+
 }
 
 .section,
-.panel,
 .auth {
-  position: relative;
-  z-index: 2;
+
   margin: 40px 7%;
+
   padding: 46px;
-  background: rgba(18, 18, 18, 0.82);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  background: rgba(18, 18, 18, .82);
+
+  border: 1px solid rgba(255, 255, 255, .08);
+
   border-radius: 30px;
+
 }
 
 .cards {
-  margin-top: 32px;
+
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+
+  grid-template-columns:
+    repeat(3, 1fr);
+
   gap: 22px;
+
+  margin-top: 32px;
+
 }
 
 .card {
-  position: relative;
+
   padding: 30px;
+
   border-radius: 28px;
-  background: rgba(255, 255, 255, 0.055);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  background:
+    rgba(255, 255, 255, .055);
+
+  border:
+    1px solid rgba(255, 255, 255, .1);
+
 }
 
 .card.popular {
-  border-color: rgba(212, 175, 55, 0.6);
-  box-shadow: 0 0 40px rgba(212, 175, 55, 0.12);
-}
 
-.card em {
-  position: absolute;
-  right: 22px;
-  top: 20px;
-  background: #d4af37;
-  color: #111;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-style: normal;
-  font-size: 12px;
-  font-weight: bold;
-}
+  border-color:
+    rgba(212, 175, 55, .6);
 
-.card h3 {
-  font-size: 25px;
-  margin: 0 0 14px;
+  box-shadow:
+    0 0 40px rgba(212, 175, 55, .12);
+
 }
 
 .price {
+
   font-size: 42px;
+
   font-weight: 900;
+
   margin: 14px 0;
-}
 
-.price small {
-  font-size: 14px;
-  color: #bfbfbf;
-}
-
-.card li {
-  margin: 12px 0;
-  color: #dddddd;
-}
-
-.card button {
-  width: 100%;
-  margin-top: 18px;
-}
-
-.split {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 30px;
-  align-items: center;
-}
-
-.joinBox {
-  display: flex;
-  gap: 12px;
-}
-
-input {
-  width: 100%;
-  padding: 15px 16px;
-  background: rgba(0, 0, 0, 0.38);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: white;
-  border-radius: 15px;
-  outline: none;
-}
-
-input:focus {
-  border-color: #d4af37;
 }
 
 .auth {
+
   display: flex;
   justify-content: center;
+
 }
 
 .authCard {
+
   width: min(100%, 520px);
+
 }
 
 .tabs {
+
   display: flex;
+
   gap: 8px;
-  background: rgba(0, 0, 0, 0.32);
+
   padding: 8px;
+
+  background:
+    rgba(0, 0, 0, .32);
+
   border-radius: 18px;
+
   margin: 20px 0;
+
 }
 
 .tabs button {
+
   flex: 1;
+
   padding: 11px;
-  border: 0;
-  border-radius: 12px;
+
   background: transparent;
+
+  border: 0;
+
   color: #bbb;
+
   cursor: pointer;
+
+  border-radius: 12px;
+
 }
 
 .tabs button.active {
+
   background: #d4af37;
-  color: #111;
-  font-weight: bold;
+
+  color: black;
+
 }
 
 form {
+
   display: grid;
+
   gap: 12px;
+
 }
 
-.message {
-  margin-top: 16px;
-  color: #ffd766;
+input {
+
+  width: 100%;
+
+  padding: 15px;
+
+  background:
+    rgba(0, 0, 0, .38);
+
+  border:
+    1px solid rgba(255, 255, 255, .12);
+
+  border-radius: 15px;
+
+  color: white;
+
 }
 
 .loggedIn {
+
   display: grid;
+
   gap: 12px;
-  color: #ddd;
+
+}
+
+.message {
+
+  margin-top: 16px;
+
+  color: #ffd766;
+
 }
 
 .adminGrid {
+
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+
+  grid-template-columns:
+    repeat(4, 1fr);
+
   gap: 18px;
+
   margin-top: 28px;
+
 }
 
 .adminGrid div {
+
   padding: 24px;
-  background: rgba(255, 255, 255, 0.055);
+
+  background:
+    rgba(255, 255, 255, .055);
+
   border-radius: 22px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
 
-.adminGrid span {
-  display: block;
-  color: #bbb;
-}
-
-.adminGrid b {
-  display: block;
-  margin-top: 10px;
-  color: #ffd766;
-  font-size: 32px;
 }
 
 footer {
-  position: relative;
-  z-index: 2;
-  color: #777;
+
   padding: 36px 7%;
+
   text-align: center;
+
+  color: #777;
+
 }
 
-@media (max-width: 850px) {
-  .nav {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 20px;
-  }
-
-  .nav nav {
-    flex-wrap: wrap;
-  }
+@media(max-width:850px) {
 
   .hero,
-  .split {
-    grid-template-columns: 1fr;
-  }
-
   .cards,
   .adminGrid {
+
     grid-template-columns: 1fr;
+
   }
 
-  .section,
-  .panel,
-  .auth,
-  .hero {
-    padding: 30px 6%;
-    margin-left: 4%;
-    margin-right: 4%;
-  }
+  .nav {
 
-  .joinBox {
     flex-direction: column;
+
+    align-items: flex-start;
+
+    gap: 20px;
+
   }
+
+  .brand span {
+
+    margin-left: 0;
+
+  }
+
 }
