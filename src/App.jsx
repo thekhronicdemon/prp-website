@@ -4,7 +4,7 @@ import { supabase } from "./supabaseClient";
 const SITE_URL = "https://thekhronicdemon.github.io/prp-website";
 
 function App() {
-  const [serverIp, setServerIp] = useState("LOCALHOST:30120");
+  const SERVER_IP = "LOCALHOST:30120";
   const [authMode, setAuthMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -92,6 +92,14 @@ function App() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user);
+      checkServerStatus();
+
+      const statusTimer = setInterval(checkServerStatus, 60000);
+
+      return () => {
+        listener.subscription.unsubscribe();
+        clearInterval(statusTimer);
+      };
     });
 
     loadAdminStats();
@@ -106,12 +114,35 @@ function App() {
   }, []);
 
   const openFiveM = () => {
-    window.location.href = `fivem://connect/${serverIp}`;
+    window.location.href = `fivem://connect/${SERVER_IP}`;
   };
 
   const purchase = (plan) => {
     alert(`${plan} selected. Connect this button to Tebex or Stripe Checkout.`);
   };
+
+  async function checkServerStatus() {
+    try {
+      const response = await fetch(`https://${SERVER_IP}/info.json`);
+
+      if (response.ok) {
+        setAdminStats((prev) => ({
+          ...prev,
+          server_status: "Online",
+        }));
+      } else {
+        setAdminStats((prev) => ({
+          ...prev,
+          server_status: "Offline",
+        }));
+      }
+    } catch {
+      setAdminStats((prev) => ({
+        ...prev,
+        server_status: "Offline",
+      }));
+    }
+  }
 
   return (
     <div className="site">
@@ -217,7 +248,6 @@ function App() {
           </div>
 
           <div className="joinBox">
-            <input value={serverIp} onChange={(e) => setServerIp(e.target.value)} />
             <button className="btn primary" onClick={openFiveM}>Open FiveM</button>
           </div>
         </section>
