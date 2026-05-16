@@ -250,7 +250,7 @@ function App() {
           <div>
 
             <strong>
-              PROGRESSION
+              ProgressioN
             </strong>
 
             <span>
