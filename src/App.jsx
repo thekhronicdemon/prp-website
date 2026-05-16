@@ -337,6 +337,7 @@ function App() {
 
       if (user) {
         await createProfileIfMissing(user);
+        await loadProfile(user.id);
       }
 
       loadAdminStats();
@@ -353,6 +354,7 @@ function App() {
 
         if (currentUser) {
           await createProfileIfMissing(currentUser);
+          await loadProfile(currentUser.id);
         } else {
           setProfile(null);
           setIsAdmin(false);
@@ -360,11 +362,25 @@ function App() {
       }
     );
 
+    const focusRefresh = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        await loadProfile(user.id);
+        await loadAdminStats();
+        await loadEvents();
+      }
+    };
+
+    window.addEventListener("focus", focusRefresh);
+
     return () => {
       listener.subscription.unsubscribe();
+      window.removeEventListener("focus", focusRefresh);
     };
   }, []);
-
   useEffect(() => {
     if (!user?.id) return;
 
@@ -788,8 +804,8 @@ function AccountPage({
                 {authMode === "login"
                   ? "Login"
                   : authMode === "signup"
-                  ? "Create Account"
-                  : "Reset Password"}
+                    ? "Create Account"
+                    : "Reset Password"}
               </button>
             </form>
           </>
