@@ -104,25 +104,28 @@ function App() {
   }
 
   async function handleLogout() {
+    setMessage("Logging out...");
 
-    const { error } = await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut({
+      scope: "local",
+    });
 
     if (error) {
-      console.log(error);
+      setMessage(error.message);
       return;
     }
 
+    localStorage.clear();
+    sessionStorage.clear();
+
     setUser(null);
     setIsAdmin(false);
-
     setEmail("");
     setPassword("");
     setUsername("");
-
     setMessage("Logged out.");
 
-    window.location.reload();
-
+    window.location.href = `${import.meta.env.BASE_URL}`;
   }
 
   async function handleAuthSubmit(e) {
@@ -250,11 +253,11 @@ function App() {
           <div>
 
             <strong>
-              ProgressioN
+              Progression
             </strong>
 
             <span>
-              ROLEPLAY
+              Roleplay
             </span>
 
           </div>
@@ -571,21 +574,17 @@ function App() {
               :
 
               <div className="loggedIn">
-
                 <strong>
                   {user.email}
                 </strong>
 
                 <button
+                  type="button"
                   className="primaryBtn"
-                  onClick={
-                    handleLogout
-                  }>
-
+                  onClick={handleLogout}
+                >
                   Logout
-
                 </button>
-
               </div>
 
             }
