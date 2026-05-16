@@ -10,14 +10,19 @@ import {
 import { supabase } from "./supabaseClient";
 
 const SITE_URL = "https://thekhronicdemon.github.io/prp-website";
+const SERVER_IP = "localhost:30120";
 
 function App() {
-  const SERVER_IP = "localhost:30120";
-
   const [authMode, setAuthMode] = useState("login");
+
   const [email, setEmail] = useState("");
+  const [confirmEmail, setConfirmEmail] = useState("");
+
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
   const [username, setUsername] = useState("");
+  const [editMode, setEditMode] = useState(null);
 
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -34,43 +39,74 @@ function App() {
   });
 
   async function loadProfile(userId) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
+
+    if (error) {
+      console.log("Profile load error:", error);
+      setMessage(error.message);
+      return null;
+    }
+
+    console.log("PROFILE LOADED:", data);
 
     setProfile(data);
     setIsAdmin(data?.role === "admin");
+
+    return data;
   }
 
   async function createProfileIfMissing(authUser, fallbackUsername = "") {
-    const { data } = await supabase
+    const cleanUsername =
+      fallbackUsername?.trim() ||
+      authUser.user_metadata?.username ||
+      authUser.email?.split("@")[0] ||
+      "User";
+
+    const { data: existingProfile } = await supabase
       .from("profiles")
       .select("id")
       .eq("id", authUser.id)
       .maybeSingle();
 
-    if (!data) {
-      await supabase.from("profiles").insert({
+    if (!existingProfile) {
+      const { error } = await supabase.from("profiles").insert({
         id: authUser.id,
         email: authUser.email,
-        username: fallbackUsername || authUser.email?.split("@")[0],
+        username: cleanUsername,
         role: "user",
         subscription: "none",
       });
+
+      if (error) {
+        console.log("Profile create error:", error);
+        setMessage(error.message);
+        return;
+      }
     }
 
     await loadProfile(authUser.id);
   }
 
   async function handleSignup() {
+    setMessage("");
+
+    if (username.trim().length < 3) {
+      setMessage("Username must be at least 3 characters.");
+      return;
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: SITE_URL,
-        data: { username },
+        data: {
+          username: username.trim(),
+        },
       },
     });
 
@@ -87,6 +123,8 @@ function App() {
   }
 
   async function handleLogin() {
+    setMessage("");
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -99,10 +137,16 @@ function App() {
 
     setUser(data.user);
     await createProfileIfMissing(data.user);
+
+    setEmail("");
+    setPassword("");
+
     setMessage("Logged in");
   }
 
   async function handleForgotPassword() {
+    setMessage("");
+
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: SITE_URL,
     });
@@ -114,9 +158,14 @@ function App() {
     setUser(null);
     setProfile(null);
     setIsAdmin(false);
+
     setEmail("");
+    setConfirmEmail("");
     setPassword("");
+    setConfirmPassword("");
     setUsername("");
+    setEditMode(null);
+
     setMessage("Logged out.");
 
     try {
@@ -138,8 +187,15 @@ function App() {
   }
 
   async function changePassword() {
-    if (!password || password.length < 6) {
-      setMessage("Enter a new password with at least 6 characters.");
+    setMessage("");
+
+    if (password !== confirmPassword) {
+      setMessage("Passwords do not match.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setMessage("Password must be at least 6 characters.");
       return;
     }
 
@@ -147,13 +203,28 @@ function App() {
       password,
     });
 
-    setMessage(error ? error.message : "Password changed.");
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
     setPassword("");
+    setConfirmPassword("");
+    setEditMode(null);
+
+    setMessage("Password changed.");
   }
 
   async function changeEmail() {
-    if (!email) {
-      setMessage("Enter a new email first.");
+    setMessage("");
+
+    if (!email || !confirmEmail) {
+      setMessage("Enter and confirm your new email.");
+      return;
+    }
+
+    if (email !== confirmEmail) {
+      setMessage("Emails do not match.");
       return;
     }
 
@@ -161,11 +232,29 @@ function App() {
       email,
     });
 
-    setMessage(error ? error.message : "Email change requested. Check your inbox.");
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    setEmail("");
+    setConfirmEmail("");
+    setEditMode(null);
+
+    setMessage("Email change requested. Check your inbox.");
   }
 
   async function changeUsername() {
-    if (!username || username.length < 3) {
+    setMessage("");
+
+    const cleanUsername = username.trim();
+
+    if (!cleanUsername) {
+      setMessage("Enter a username.");
+      return;
+    }
+
+    if (cleanUsername.length < 3) {
       setMessage("Username must be at least 3 characters.");
       return;
     }
@@ -185,21 +274,29 @@ function App() {
       }
     }
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .update({
-        username,
+        username: cleanUsername,
         username_last_changed_at: new Date().toISOString(),
       })
-      .eq("id", user.id);
+      .eq("id", user.id)
+      .select("*")
+      .maybeSingle();
 
     if (error) {
+      console.log("Username update error:", error);
       setMessage(error.message);
       return;
     }
 
+    console.log("USERNAME UPDATED:", data);
+
     await loadProfile(user.id);
-    setMessage("Username changed.");
+
+    setUsername("");
+    setEditMode(null);
+    setMessage("Username updated successfully.");
   }
 
   async function loadAdminStats() {
@@ -276,341 +373,18 @@ function App() {
       platinum: "Platinum Priority",
     };
 
-    if (!profile?.subscription_expires_at) return labelMap[sub] || "No Subscription";
+    if (!profile?.subscription_expires_at) {
+      return labelMap[sub] || "No Subscription";
+    }
 
     const end = new Date(profile.subscription_expires_at);
+
     const days = Math.max(
       0,
       Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
     );
 
     return `${labelMap[sub]} - ${days} days left`;
-  }
-
-  function HomePage() {
-    return (
-      <>
-        <section className="hero">
-          <div>
-            <p className="pill">BETA OPENING SOON</p>
-
-            <h1>
-              Build your story in
-              <span> Progression RP</span>
-            </h1>
-
-            <p className="lead">
-              A serious but enjoyable FiveM roleplay city built around progression.
-            </p>
-
-            <div className="actions">
-              <button className="btn primary" onClick={openFiveM}>
-                Join FiveM
-              </button>
-
-              <a className="btn" href="https://discord.gg/Vt4R9pWg2Z">
-                Discord
-              </a>
-            </div>
-          </div>
-
-          <div className="logoCard">
-            <div className="features">
-              <b>Custom Jobs</b>
-              <b>Active Staff</b>
-              <b>Balanced Economy</b>
-              <b>Community Driven</b>
-            </div>
-          </div>
-        </section>
-
-        <section className="section">
-          <p className="eyebrow">UPCOMING EVENTS</p>
-          <h2>City Events</h2>
-
-          <div className="eventList">
-            {events.length === 0 ? (
-              <div className="eventBubble">
-                <strong>No events posted yet.</strong>
-                <p>Check back soon for community nights, openings, and special events.</p>
-              </div>
-            ) : (
-              events.map((event) => (
-                <div className="eventBubble" key={event.id}>
-                  <strong>{event.title}</strong>
-                  <p>{event.description}</p>
-                  <span>{new Date(event.event_date).toLocaleString()}</span>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
-      </>
-    );
-  }
-
-  function AboutPage() {
-    return (
-      <section className="section">
-        <p className="eyebrow">ABOUT THE CITY</p>
-
-        <h2>Progression Roleplay</h2>
-
-        <p className="sectionText">
-          Progression Roleplay is a FiveM roleplay community focused on long-term
-          character progression, balanced systems, serious roleplay, and community
-          feedback. Our goal is to build a city where every player can create a
-          story, grow their character, and be part of something that develops over time.
-        </p>
-
-        <div className="aboutGrid">
-          <div>
-            <h3>Progression Focused</h3>
-            <p>Earn your place, build your character, and grow through real roleplay.</p>
-          </div>
-
-          <div>
-            <h3>Community Driven</h3>
-            <p>Feedback, criticism, and ideas help shape the city during beta and beyond.</p>
-          </div>
-
-          <div>
-            <h3>Balanced Roleplay</h3>
-            <p>Jobs, economy, gangs, businesses, and services are built to feel rewarding.</p>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  function ShopPage() {
-    return (
-      <section className="section">
-        <p className="eyebrow">SUPPORT THE CITY</p>
-
-        <h2>Server Priority Shop</h2>
-
-        <p className="sectionText">
-          Support the server and receive queue priority.
-        </p>
-
-        <div className="cards">
-          <div className="card">
-            <h3>Priority Bronze</h3>
-            <p className="price">
-              $10 <small>/ monthly</small>
-            </p>
-            <ul>
-              <li>Basic queue priority</li>
-              <li>Discord role</li>
-              <li>Supporter badge</li>
-            </ul>
-            <a href="YOUR_TEBEX_BRONZE" target="_blank" rel="noreferrer">
-              <button type="button">Purchase</button>
-            </a>
-          </div>
-
-          <div className="card popular">
-            <em>Popular</em>
-            <h3>Priority Gold</h3>
-            <p className="price">
-              $20 <small>/ monthly</small>
-            </p>
-            <ul>
-              <li>Higher queue priority</li>
-              <li>Exclusive role</li>
-              <li>Supporter chat</li>
-            </ul>
-            <a href="YOUR_TEBEX_GOLD" target="_blank" rel="noreferrer">
-              <button type="button">Purchase</button>
-            </a>
-          </div>
-
-          <div className="card">
-            <h3>Priority Platinum</h3>
-            <p className="price">
-              $50 <small>/ monthly</small>
-            </p>
-            <ul>
-              <li>Highest priority</li>
-              <li>Elite role</li>
-              <li>Priority support</li>
-            </ul>
-            <a href="YOUR_TEBEX_PLATINUM" target="_blank" rel="noreferrer">
-              <button type="button">Purchase</button>
-            </a>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  function AccountPage() {
-    return (
-      <section className="auth">
-        <div className="authCard accountWide">
-          <h2>{user ? "Account" : "Login / Sign Up"}</h2>
-
-          {!user ? (
-            <>
-              <div className="tabs">
-                <button
-                  type="button"
-                  className={authMode === "login" ? "active" : ""}
-                  onClick={() => setAuthMode("login")}
-                >
-                  Login
-                </button>
-
-                <button
-                  type="button"
-                  className={authMode === "signup" ? "active" : ""}
-                  onClick={() => setAuthMode("signup")}
-                >
-                  Signup
-                </button>
-
-                <button
-                  type="button"
-                  className={authMode === "forgot" ? "active" : ""}
-                  onClick={() => setAuthMode("forgot")}
-                >
-                  Forgot
-                </button>
-              </div>
-
-              <form onSubmit={handleAuthSubmit}>
-                {authMode === "signup" && (
-                  <input
-                    placeholder="Username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                  />
-                )}
-
-                <input
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-
-                {authMode !== "forgot" && (
-                  <input
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                )}
-
-                <button className="primaryBtn" type="submit">
-                  {authMode === "login"
-                    ? "Login"
-                    : authMode === "signup"
-                    ? "Create Account"
-                    : "Reset Password"}
-                </button>
-              </form>
-            </>
-          ) : (
-            <div className="accountPanel">
-              <div className="accountInfo">
-                <div>
-                  <span>Username</span>
-                  <strong>{profile?.username || "Not set"}</strong>
-                </div>
-
-                <div>
-                  <span>Email</span>
-                  <strong>{user.email}</strong>
-                </div>
-
-                <div>
-                  <span>Active Subscription</span>
-                  <strong className={`subBadge ${profile?.subscription || "none"}`}>
-                    {getSubLabel()}
-                  </strong>
-                </div>
-              </div>
-
-              <div className="accountActions">
-                <input
-                  placeholder="New username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                />
-
-                <button type="button" className="primaryBtn" onClick={changeUsername}>
-                  Change Username
-                </button>
-
-                <input
-                  placeholder="New email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-
-                <button type="button" className="primaryBtn" onClick={changeEmail}>
-                  Change Email
-                </button>
-
-                <input
-                  type="password"
-                  placeholder="New password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-
-                <button type="button" className="primaryBtn" onClick={changePassword}>
-                  Change Password
-                </button>
-
-                <button type="button" className="primaryBtn" onClick={handleLogout}>
-                  Logout
-                </button>
-              </div>
-            </div>
-          )}
-
-          <p className="message">{message}</p>
-        </div>
-      </section>
-    );
-  }
-
-  function AdminPage() {
-    if (!isAdmin) return <Navigate to="/account" replace />;
-
-    return (
-      <section className="section">
-        <p className="eyebrow">ADMIN ACCESS</p>
-
-        <h2>Website Control Panel</h2>
-
-        <div className="adminGrid">
-          <div>
-            <span>Users</span>
-            <b>{adminStats.active_users}</b>
-          </div>
-
-          <div>
-            <span>Tickets</span>
-            <b>{adminStats.tickets}</b>
-          </div>
-
-          <div>
-            <span>Revenue</span>
-            <b>${adminStats.revenue}</b>
-          </div>
-
-          <div>
-            <span>Status</span>
-            <b>{adminStats.server_status}</b>
-          </div>
-        </div>
-      </section>
-    );
   }
 
   return (
@@ -621,7 +395,10 @@ function App() {
 
         <header className="nav">
           <Link className="brand" to="/">
-            <img src={`${import.meta.env.BASE_URL}assets/logo.png`} alt="logo" />
+            <img
+              src={`${import.meta.env.BASE_URL}assets/logo.png`}
+              alt="logo"
+            />
 
             <div>
               <strong>Progression</strong>
@@ -640,17 +417,527 @@ function App() {
 
         <main>
           <Routes>
-            <Route path="/" element={<HomePage />} />
+            <Route
+              path="/"
+              element={<HomePage events={events} openFiveM={openFiveM} />}
+            />
+
             <Route path="/about" element={<AboutPage />} />
+
             <Route path="/shop" element={<ShopPage />} />
-            <Route path="/account" element={<AccountPage />} />
-            <Route path="/admin" element={<AdminPage />} />
+
+            <Route
+              path="/account"
+              element={
+                <AccountPage
+                  user={user}
+                  profile={profile}
+                  authMode={authMode}
+                  setAuthMode={setAuthMode}
+                  email={email}
+                  setEmail={setEmail}
+                  confirmEmail={confirmEmail}
+                  setConfirmEmail={setConfirmEmail}
+                  password={password}
+                  setPassword={setPassword}
+                  confirmPassword={confirmPassword}
+                  setConfirmPassword={setConfirmPassword}
+                  username={username}
+                  setUsername={setUsername}
+                  editMode={editMode}
+                  setEditMode={setEditMode}
+                  message={message}
+                  setMessage={setMessage}
+                  handleAuthSubmit={handleAuthSubmit}
+                  handleLogout={handleLogout}
+                  changeUsername={changeUsername}
+                  changeEmail={changeEmail}
+                  changePassword={changePassword}
+                  getSubLabel={getSubLabel}
+                />
+              }
+            />
+
+            <Route
+              path="/admin"
+              element={
+                <AdminPage isAdmin={isAdmin} adminStats={adminStats} />
+              }
+            />
           </Routes>
         </main>
 
         <footer>© Progression RP</footer>
       </div>
     </HashRouter>
+  );
+}
+
+function HomePage({ events, openFiveM }) {
+  return (
+    <>
+      <section className="hero">
+        <div>
+          <p className="pill">BETA OPENING SOON</p>
+
+          <h1>
+            Build your story in
+            <span> Progression RP</span>
+          </h1>
+
+          <p className="lead">
+            A serious but enjoyable FiveM roleplay city built around progression.
+          </p>
+
+          <div className="actions">
+            <button className="btn primary" onClick={openFiveM}>
+              Join FiveM
+            </button>
+
+            <a className="btn" href="https://discord.gg/Vt4R9pWg2Z">
+              Discord
+            </a>
+          </div>
+        </div>
+
+        <div className="logoCard">
+          <div className="features">
+            <b>Custom Jobs</b>
+            <b>Active Staff</b>
+            <b>Balanced Economy</b>
+            <b>Community Driven</b>
+          </div>
+        </div>
+      </section>
+
+      <section className="section">
+        <p className="eyebrow">UPCOMING EVENTS</p>
+
+        <h2>City Events</h2>
+
+        <div className="eventList">
+          {events.length === 0 ? (
+            <div className="eventBubble">
+              <strong>No events posted yet.</strong>
+              <p>
+                Check back soon for community nights, openings, and special
+                events.
+              </p>
+            </div>
+          ) : (
+            events.map((event) => (
+              <div className="eventBubble" key={event.id}>
+                <strong>{event.title}</strong>
+                <p>{event.description}</p>
+                <span>{new Date(event.event_date).toLocaleString()}</span>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+    </>
+  );
+}
+
+function AboutPage() {
+  return (
+    <section className="section">
+      <p className="eyebrow">ABOUT THE CITY</p>
+
+      <h2>Progression Roleplay</h2>
+
+      <p className="sectionText">
+        Progression Roleplay is a FiveM roleplay community focused on long-term
+        character progression, balanced systems, serious roleplay, and community
+        feedback. Our goal is to build a city where every player can create a
+        story, grow their character, and be part of something that develops over
+        time.
+      </p>
+
+      <div className="aboutGrid">
+        <div>
+          <h3>Progression Focused</h3>
+          <p>
+            Earn your place, build your character, and grow through real
+            roleplay.
+          </p>
+        </div>
+
+        <div>
+          <h3>Community Driven</h3>
+          <p>
+            Feedback, criticism, and ideas help shape the city during beta and
+            beyond.
+          </p>
+        </div>
+
+        <div>
+          <h3>Balanced Roleplay</h3>
+          <p>
+            Jobs, economy, gangs, businesses, and services are built to feel
+            rewarding.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ShopPage() {
+  return (
+    <section className="section">
+      <p className="eyebrow">SUPPORT THE CITY</p>
+
+      <h2>Server Priority Shop</h2>
+
+      <p className="sectionText">
+        Support the server and receive queue priority.
+      </p>
+
+      <div className="cards">
+        <div className="card">
+          <h3>Priority Bronze</h3>
+
+          <p className="price">
+            $10 <small>/ monthly</small>
+          </p>
+
+          <ul>
+            <li>Basic queue priority</li>
+            <li>Discord role</li>
+            <li>Supporter badge</li>
+          </ul>
+
+          <a href="YOUR_TEBEX_BRONZE" target="_blank" rel="noreferrer">
+            <button type="button">Purchase</button>
+          </a>
+        </div>
+
+        <div className="card popular">
+          <em>Popular</em>
+
+          <h3>Priority Gold</h3>
+
+          <p className="price">
+            $20 <small>/ monthly</small>
+          </p>
+
+          <ul>
+            <li>Higher queue priority</li>
+            <li>Exclusive role</li>
+            <li>Supporter chat</li>
+          </ul>
+
+          <a href="YOUR_TEBEX_GOLD" target="_blank" rel="noreferrer">
+            <button type="button">Purchase</button>
+          </a>
+        </div>
+
+        <div className="card">
+          <h3>Priority Platinum</h3>
+
+          <p className="price">
+            $50 <small>/ monthly</small>
+          </p>
+
+          <ul>
+            <li>Highest priority</li>
+            <li>Elite role</li>
+            <li>Priority support</li>
+          </ul>
+
+          <a href="YOUR_TEBEX_PLATINUM" target="_blank" rel="noreferrer">
+            <button type="button">Purchase</button>
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function AccountPage({
+  user,
+  profile,
+  authMode,
+  setAuthMode,
+  email,
+  setEmail,
+  confirmEmail,
+  setConfirmEmail,
+  password,
+  setPassword,
+  confirmPassword,
+  setConfirmPassword,
+  username,
+  setUsername,
+  editMode,
+  setEditMode,
+  message,
+  setMessage,
+  handleAuthSubmit,
+  handleLogout,
+  changeUsername,
+  changeEmail,
+  changePassword,
+  getSubLabel,
+}) {
+  return (
+    <section className="auth">
+      <div className="authCard accountWide">
+        <h2>{user ? "Account" : "Login / Sign Up"}</h2>
+
+        {!user ? (
+          <>
+            <div className="tabs">
+              <button
+                type="button"
+                className={authMode === "login" ? "active" : ""}
+                onClick={() => setAuthMode("login")}
+              >
+                Login
+              </button>
+
+              <button
+                type="button"
+                className={authMode === "signup" ? "active" : ""}
+                onClick={() => setAuthMode("signup")}
+              >
+                Signup
+              </button>
+
+              <button
+                type="button"
+                className={authMode === "forgot" ? "active" : ""}
+                onClick={() => setAuthMode("forgot")}
+              >
+                Forgot
+              </button>
+            </div>
+
+            <form onSubmit={handleAuthSubmit}>
+              {authMode === "signup" && (
+                <input
+                  type="text"
+                  autoComplete="username"
+                  placeholder="Username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+              )}
+
+              <input
+                type="email"
+                autoComplete="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+
+              {authMode !== "forgot" && (
+                <input
+                  type="password"
+                  autoComplete={
+                    authMode === "signup" ? "new-password" : "current-password"
+                  }
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              )}
+
+              <button className="primaryBtn" type="submit">
+                {authMode === "login"
+                  ? "Login"
+                  : authMode === "signup"
+                    ? "Create Account"
+                    : "Reset Password"}
+              </button>
+            </form>
+          </>
+        ) : (
+          <div className="accountPanel">
+            <div className="accountInfo">
+              <div>
+                <span>Username</span>
+                <strong>{profile?.username ? profile.username : "Not set"}</strong>
+              </div>
+
+              <div>
+                <span>Email</span>
+                <strong>{user.email}</strong>
+              </div>
+
+              <div>
+                <span>Active Subscription</span>
+                <strong className={`subBadge ${profile?.subscription || "none"}`}>
+                  {getSubLabel()}
+                </strong>
+              </div>
+            </div>
+
+            <div className="accountActions">
+              <button
+                type="button"
+                className="primaryBtn"
+                onClick={() => {
+                  setEditMode(editMode === "username" ? null : "username");
+                  setUsername("");
+                  setMessage("");
+                }}
+              >
+                Change Username
+              </button>
+
+              {editMode === "username" && (
+                <>
+                  <input
+                    type="text"
+                    autoComplete="off"
+                    placeholder="New username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                  />
+
+                  <button
+                    type="button"
+                    className="primaryBtn"
+                    onClick={changeUsername}
+                  >
+                    Confirm Username
+                  </button>
+                </>
+              )}
+
+              <button
+                type="button"
+                className="primaryBtn"
+                onClick={() => {
+                  setEditMode(editMode === "email" ? null : "email");
+                  setEmail("");
+                  setConfirmEmail("");
+                  setMessage("");
+                }}
+              >
+                Change Email
+              </button>
+
+              {editMode === "email" && (
+                <>
+                  <input
+                    type="email"
+                    autoComplete="off"
+                    placeholder="New email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+
+                  <input
+                    type="email"
+                    autoComplete="off"
+                    placeholder="Confirm new email"
+                    value={confirmEmail}
+                    onChange={(e) => setConfirmEmail(e.target.value)}
+                  />
+
+                  <button
+                    type="button"
+                    className="primaryBtn"
+                    onClick={changeEmail}
+                  >
+                    Confirm Email
+                  </button>
+                </>
+              )}
+
+              <button
+                type="button"
+                className="primaryBtn"
+                onClick={() => {
+                  setEditMode(editMode === "password" ? null : "password");
+                  setPassword("");
+                  setConfirmPassword("");
+                  setMessage("");
+                }}
+              >
+                Change Password
+              </button>
+
+              {editMode === "password" && (
+                <>
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="New password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="Confirm new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+
+                  <button
+                    type="button"
+                    className="primaryBtn"
+                    onClick={changePassword}
+                  >
+                    Confirm Password
+                  </button>
+                </>
+              )}
+
+              <button
+                type="button"
+                className="primaryBtn"
+                onClick={handleLogout}
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        )}
+
+        <p className="message">{message}</p>
+      </div>
+    </section>
+  );
+}
+
+function AdminPage({ isAdmin, adminStats }) {
+  if (!isAdmin) return <Navigate to="/account" replace />;
+
+  return (
+    <section className="section">
+      <p className="eyebrow">ADMIN ACCESS</p>
+
+      <h2>Website Control Panel</h2>
+
+      <div className="adminGrid">
+        <div>
+          <span>Users</span>
+          <b>{adminStats.active_users}</b>
+        </div>
+
+        <div>
+          <span>Tickets</span>
+          <b>{adminStats.tickets}</b>
+        </div>
+
+        <div>
+          <span>Revenue</span>
+          <b>${adminStats.revenue}</b>
+        </div>
+
+        <div>
+          <span>Status</span>
+          <b>{adminStats.server_status}</b>
+        </div>
+      </div>
+    </section>
   );
 }
 
