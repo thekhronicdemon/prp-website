@@ -185,14 +185,14 @@ function App() {
             </div>
           </div>
 
-
-          <div className="features">
-            <b>Custom Jobs</b>
-            <b>Active Staff</b>
-            <b>Balanced Economy</b>
-            <b>Community Driven</b>
+          <div className="logoCard">
+            <div className="features">
+              <b>Custom Jobs</b>
+              <b>Active Staff</b>
+              <b>Balanced Economy</b>
+              <b>Community Driven</b>
+            </div>
           </div>
-
         </section>
 
         <section id="shop" className="section">
