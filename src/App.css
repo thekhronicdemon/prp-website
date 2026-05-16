@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&display=swap');
+
 * {
   box-sizing: border-box;
 }
@@ -73,18 +75,63 @@ button, input {
   object-fit: contain;
 }
 
-.brand strong {
-  display: block;
-  font-size: 20px;
-  letter-spacing: 1px;
+.brand {
+  display:flex;
+  align-items:center;
+  gap:16px;
+  text-decoration:none;
 }
 
-.brand span {
-  display: block;
-  color: #d4af37;
-  font-size: 12px;
-  letter-spacing: 4px;
-  text-transform: uppercase;
+.brand img{
+  width:58px;
+  height:58px;
+  object-fit:contain;
+}
+
+.brand div{
+  display:flex;
+  flex-direction:column;
+  line-height:.9;
+}
+
+.brand strong{
+    font-family:'Cinzel',serif;
+    font-size:36px;
+    font-weight:900;
+    text-transform:uppercase;
+
+    letter-spacing:1px;
+
+    background:linear-gradient(
+      to bottom,
+      #fffbe1 0%,
+      #ffe894 15%,
+      #ffc93c 40%,
+      #d69d18 70%,
+      #7b4e00 100%
+    );
+
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+
+    filter:drop-shadow(0 0 10px rgba(255,190,0,.35));
+
+    margin-bottom:2px;
+}
+
+.brand span{
+    font-family:'Cinzel',serif;
+
+    font-size:13px;
+    font-weight:700;
+
+    letter-spacing:7px;
+
+    color:#d6a62d;
+
+    text-transform:uppercase;
+
+    margin-left:4px;
 }
 
 .nav nav {
