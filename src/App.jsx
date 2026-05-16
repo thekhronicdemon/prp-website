@@ -39,22 +39,23 @@ function App() {
   });
 
   async function loadProfile(userId) {
+    console.log("Loading profile for:", userId);
+
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
-      .maybeSingle();
+      .single();
 
     if (error) {
-      console.log("Profile load error:", error);
-      setMessage(error.message);
-      return null;
+      console.log("PROFILE ERROR:", error);
+      return;
     }
 
-    setProfile(data);
-    setIsAdmin(data?.role === "admin");
+    console.log("PROFILE DATA:", data);
 
-    return data;
+    setProfile({ ...data });
+    setIsAdmin(data.role === "admin");
   }
 
   async function createProfileIfMissing(authUser, fallbackUsername = "") {
@@ -381,37 +382,37 @@ function App() {
       window.removeEventListener("focus", focusRefresh);
     };
   }, []);
-  
+
   useEffect(() => {
-  if (!user?.id) return;
+    if (!user?.id) return;
 
-  loadProfile(user.id);
+    loadProfile(user.id);
 
-  const channel = supabase
-    .channel(`profile-live-${user.id}`)
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "profiles",
-        filter: `id=eq.${user.id}`,
-      },
-      (payload) => {
-        console.log("LIVE PROFILE UPDATE:", payload);
+    const channel = supabase
+      .channel(`profile-live-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "profiles",
+          filter: `id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log("LIVE PROFILE UPDATE:", payload);
 
-        if (payload.new) {
-          setProfile(payload.new);
-          setIsAdmin(payload.new.role === "admin");
+          if (payload.new) {
+            setProfile(payload.new);
+            setIsAdmin(payload.new.role === "admin");
+          }
         }
-      }
-    )
-    .subscribe();
+      )
+      .subscribe();
 
-  return () => {
-    supabase.removeChannel(channel);
-  };
-}, [user?.id]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
   const openFiveM = () => {
     window.location.href = `fivem://connect/${SERVER_IP}`;
