@@ -351,6 +351,109 @@ function App() {
 
         </section>
 
+        <section id="shop" className="section">
+
+          <p className="eyebrow">
+            SUPPORT THE CITY
+          </p>
+
+          <h2>
+            Server Priority Shop
+          </h2>
+
+          <p className="sectionText">
+            Support the server and receive queue priority.
+          </p>
+
+          <div className="cards">
+
+            <div className="card">
+
+              <h3>Priority Bronze</h3>
+
+              <p className="price">
+                $10 <small>/ monthly</small>
+              </p>
+
+              <ul>
+                <li>Basic queue priority</li>
+                <li>Discord role</li>
+                <li>Supporter badge</li>
+              </ul>
+
+              <a
+                href="YOUR_TEBEX_BRONZE"
+                target="_blank"
+                rel="noreferrer">
+
+                <button>
+                  Purchase
+                </button>
+
+              </a>
+
+            </div>
+
+            <div className="card popular">
+
+              <em>Popular</em>
+
+              <h3>Priority Gold</h3>
+
+              <p className="price">
+                $20 <small>/ monthly</small>
+              </p>
+
+              <ul>
+                <li>Higher queue priority</li>
+                <li>Exclusive role</li>
+                <li>Supporter chat</li>
+              </ul>
+
+              <a
+                href="YOUR_TEBEX_GOLD"
+                target="_blank"
+                rel="noreferrer">
+
+                <button>
+                  Purchase
+                </button>
+
+              </a>
+
+            </div>
+
+            <div className="card">
+
+              <h3>Priority Platinum</h3>
+
+              <p className="price">
+                $50 <small>/ monthly</small>
+              </p>
+
+              <ul>
+                <li>Highest priority</li>
+                <li>Elite role</li>
+                <li>Priority support</li>
+              </ul>
+
+              <a
+                href="YOUR_TEBEX_PLATINUM"
+                target="_blank"
+                rel="noreferrer">
+
+                <button>
+                  Purchase
+                </button>
+
+              </a>
+
+            </div>
+
+          </div>
+
+        </section>
+
         <section
           id="account"
           className="auth">
