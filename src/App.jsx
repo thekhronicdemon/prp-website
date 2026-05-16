@@ -239,18 +239,6 @@ function App() {
           </div>
         </section>
 
-        <section id="join" className="panel split">
-          <div>
-            <p className="eyebrow">CONNECT</p>
-            <h2>Direct FiveM Join Link</h2>
-            <p>Enter your real FiveM endpoint below, then players can open FiveM directly from the website.</p>
-          </div>
-
-          <div className="joinBox">
-            <button className="btn primary" onClick={openFiveM}>Open FiveM</button>
-          </div>
-        </section>
-
         <section id="account" className="auth">
           <div className="authCard">
             <p className="eyebrow">ACCOUNT</p>
