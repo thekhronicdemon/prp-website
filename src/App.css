@@ -15,7 +15,8 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-button, input {
+button,
+input {
   font: inherit;
 }
 
@@ -58,80 +59,67 @@ button, input {
   padding: 22px 7%;
   background: rgba(10, 10, 10, 0.82);
   backdrop-filter: blur(14px);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 14px;
-  color: white;
+  gap: 18px;
   text-decoration: none;
 }
 
 .brand img {
-  width: 58px;
-  height: 58px;
+  width: 64px;
+  height: 64px;
   object-fit: contain;
 }
 
-.brand {
-  display:flex;
-  align-items:center;
-  gap:16px;
-  text-decoration:none;
+.brand div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-.brand img{
-  width:58px;
-  height:58px;
-  object-fit:contain;
+.brand strong {
+
+  font-family: 'Cinzel', serif;
+  font-size: 52px;
+  font-weight: 900;
+
+  line-height: .85;
+
+  letter-spacing: 2px;
+
+  background: linear-gradient(to bottom,
+      #fffdf4 0%,
+      #fff1b0 10%,
+      #ffd24f 35%,
+      #f0b018 55%,
+      #9f6800 100%);
+
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  text-shadow:
+    0 1px 0 #fff7d0,
+    0 2px 0 #cc8e00,
+    0 0 18px rgba(255, 190, 0, .45);
+
 }
 
-.brand div{
-  display:flex;
-  flex-direction:column;
-  line-height:.9;
-}
+.brand span {
 
-.brand strong{
-    font-family:'Cinzel',serif;
-    font-size:36px;
-    font-weight:900;
-    text-transform:uppercase;
+  font-family: 'Cinzel', serif;
 
-    letter-spacing:1px;
+  font-size: 13px;
 
-    background:linear-gradient(
-      to bottom,
-      #fffbe1 0%,
-      #ffe894 15%,
-      #ffc93c 40%,
-      #d69d18 70%,
-      #7b4e00 100%
-    );
+  letter-spacing: 9px;
 
-    -webkit-background-clip:text;
-    -webkit-text-fill-color:transparent;
+  color: #d6a62d;
 
-    filter:drop-shadow(0 0 10px rgba(255,190,0,.35));
+  margin-left: 5px;
 
-    margin-bottom:2px;
-}
-
-.brand span{
-    font-family:'Cinzel',serif;
-
-    font-size:13px;
-    font-weight:700;
-
-    letter-spacing:7px;
-
-    color:#ffffff;
-
-    text-transform:uppercase;
-
-    margin-left:60px;
 }
 
 .nav nav {
@@ -160,7 +148,8 @@ button, input {
   padding: 80px 7%;
 }
 
-.pill, .eyebrow {
+.pill,
+.eyebrow {
   display: inline-block;
   color: #ffd766;
   background: rgba(212, 175, 55, 0.12);
@@ -180,7 +169,7 @@ h1 {
 
 h1 span {
   color: #d4af37;
-  text-shadow: 0 0 28px rgba(212,175,55,0.35);
+  text-shadow: 0 0 28px rgba(212, 175, 55, 0.35);
 }
 
 h2 {
@@ -188,7 +177,9 @@ h2 {
   margin: 12px 0;
 }
 
-.lead, .sectionText, .panel p {
+.lead,
+.sectionText,
+.panel p {
   color: #c7c7c7;
   line-height: 1.75;
   font-size: 17px;
@@ -202,12 +193,15 @@ h2 {
   margin-top: 32px;
 }
 
-.btn, .primaryBtn, .card button, .joinBox button {
+.btn,
+.primaryBtn,
+.card button,
+.joinBox button {
   border: 0;
   cursor: pointer;
   padding: 14px 20px;
   border-radius: 16px;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   color: white;
   text-decoration: none;
   display: inline-flex;
@@ -216,23 +210,25 @@ h2 {
   font-weight: bold;
 }
 
-.primary, .primaryBtn, .card button {
+.primary,
+.primaryBtn,
+.card button {
   background: linear-gradient(135deg, #ffe08a, #d4af37, #9b6b00);
   color: #090909;
 }
 
 .logoCard {
-  background: rgba(20,20,20,0.76);
-  border: 1px solid rgba(212,175,55,0.18);
+  background: rgba(20, 20, 20, 0.76);
+  border: 1px solid rgba(212, 175, 55, 0.18);
   border-radius: 34px;
   padding: 34px;
-  box-shadow: 0 24px 80px rgba(0,0,0,0.45);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
   text-align: center;
 }
 
 .logoCard img {
   width: min(70%, 300px);
-  filter: drop-shadow(0 0 38px rgba(212,175,55,0.36));
+  filter: drop-shadow(0 0 38px rgba(212, 175, 55, 0.36));
 }
 
 .features {
@@ -243,19 +239,21 @@ h2 {
 }
 
 .features b {
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
   padding: 16px;
   border-radius: 18px;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.section, .panel, .auth {
+.section,
+.panel,
+.auth {
   position: relative;
   z-index: 2;
   margin: 40px 7%;
   padding: 46px;
-  background: rgba(18,18,18,0.82);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(18, 18, 18, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 30px;
 }
 
@@ -270,13 +268,13 @@ h2 {
   position: relative;
   padding: 30px;
   border-radius: 28px;
-  background: rgba(255,255,255,0.055);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .card.popular {
-  border-color: rgba(212,175,55,0.6);
-  box-shadow: 0 0 40px rgba(212,175,55,0.12);
+  border-color: rgba(212, 175, 55, 0.6);
+  box-shadow: 0 0 40px rgba(212, 175, 55, 0.12);
 }
 
 .card em {
@@ -333,8 +331,8 @@ h2 {
 input {
   width: 100%;
   padding: 15px 16px;
-  background: rgba(0,0,0,0.38);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0, 0, 0, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   color: white;
   border-radius: 15px;
   outline: none;
@@ -356,7 +354,7 @@ input:focus {
 .tabs {
   display: flex;
   gap: 8px;
-  background: rgba(0,0,0,0.32);
+  background: rgba(0, 0, 0, 0.32);
   padding: 8px;
   border-radius: 18px;
   margin: 20px 0;
@@ -403,9 +401,9 @@ form {
 
 .adminGrid div {
   padding: 24px;
-  background: rgba(255,255,255,0.055);
+  background: rgba(255, 255, 255, 0.055);
   border-radius: 22px;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .adminGrid span {
@@ -439,15 +437,20 @@ footer {
     flex-wrap: wrap;
   }
 
-  .hero, .split {
+  .hero,
+  .split {
     grid-template-columns: 1fr;
   }
 
-  .cards, .adminGrid {
+  .cards,
+  .adminGrid {
     grid-template-columns: 1fr;
   }
 
-  .section, .panel, .auth, .hero {
+  .section,
+  .panel,
+  .auth,
+  .hero {
     padding: 30px 6%;
     margin-left: 4%;
     margin-right: 4%;
