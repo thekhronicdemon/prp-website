@@ -185,15 +185,14 @@ function App() {
             </div>
           </div>
 
-          <div className="logoCard">
-            <img src={`${import.meta.env.BASE_URL}assets/logo.png`} alt="Logo" />
-            <div className="features">
-              <b>Custom Jobs</b>
-              <b>Active Staff</b>
-              <b>Balanced Economy</b>
-              <b>Community Driven</b>
-            </div>
+
+          <div className="features">
+            <b>Custom Jobs</b>
+            <b>Active Staff</b>
+            <b>Balanced Economy</b>
+            <b>Community Driven</b>
           </div>
+
         </section>
 
         <section id="shop" className="section">
