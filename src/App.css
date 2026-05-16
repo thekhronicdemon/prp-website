@@ -494,3 +494,108 @@ footer {
   }
 
 }
+
+.eventList,
+.aboutGrid,
+.accountPanel,
+.accountInfo,
+.accountActions {
+  display: grid;
+  gap: 18px;
+}
+
+.eventBubble {
+  padding: 22px;
+  border-radius: 22px;
+  background: rgba(255,255,255,.055);
+  border: 1px solid rgba(212,175,55,.22);
+}
+
+.eventBubble strong {
+  display: block;
+  color: #ffd766;
+  font-size: 22px;
+  margin-bottom: 8px;
+}
+
+.eventBubble p,
+.eventBubble span,
+.aboutGrid p {
+  color: #c7c7c7;
+  line-height: 1.6;
+}
+
+.aboutGrid {
+  grid-template-columns: repeat(3,1fr);
+  margin-top: 30px;
+}
+
+.aboutGrid div {
+  padding: 24px;
+  border-radius: 22px;
+  background: rgba(255,255,255,.055);
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+.accountWide {
+  width: min(100%, 850px);
+}
+
+.accountPanel {
+  grid-template-columns: 1fr 1fr;
+}
+
+.accountInfo div {
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(255,255,255,.055);
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+.accountInfo span {
+  display: block;
+  color: #aaa;
+  margin-bottom: 6px;
+}
+
+.accountInfo strong {
+  color: white;
+}
+
+.subBadge {
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: 999px;
+  margin-top: 4px;
+}
+
+.subBadge.none {
+  background: #444;
+  color: #ddd;
+}
+
+.subBadge.bronze {
+  background: linear-gradient(135deg,#cd7f32,#7a431d);
+  color: white;
+}
+
+.subBadge.gold {
+  background: linear-gradient(135deg,#ffe08a,#d4af37,#9b6b00);
+  color: black;
+}
+
+.subBadge.platinum {
+  background: linear-gradient(135deg,#f4f4f4,#bfc7d5,#6d7480);
+  color: black;
+}
+
+.accountActions {
+  align-content: start;
+}
+
+@media(max-width:850px){
+  .aboutGrid,
+  .accountPanel {
+    grid-template-columns: 1fr;
+  }
+}
