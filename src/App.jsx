@@ -51,8 +51,6 @@ function App() {
       return null;
     }
 
-    console.log("PROFILE LOADED:", data);
-
     setProfile(data);
     setIsAdmin(data?.role === "admin");
 
@@ -66,11 +64,17 @@ function App() {
       authUser.email?.split("@")[0] ||
       "User";
 
-    const { data: existingProfile } = await supabase
+    const { data: existingProfile, error: checkError } = await supabase
       .from("profiles")
       .select("id")
       .eq("id", authUser.id)
       .maybeSingle();
+
+    if (checkError) {
+      console.log("Profile check error:", checkError);
+      setMessage(checkError.message);
+      return;
+    }
 
     if (!existingProfile) {
       const { error } = await supabase.from("profiles").insert({
@@ -290,12 +294,15 @@ function App() {
       return;
     }
 
-    console.log("USERNAME UPDATED:", data);
+    if (!data) {
+      setMessage("No profile row updated. Check your profile ID.");
+      return;
+    }
 
-    await loadProfile(user.id);
-
+    setProfile(data);
     setUsername("");
     setEditMode(null);
+
     setMessage("Username updated successfully.");
   }
 
@@ -357,6 +364,38 @@ function App() {
       listener.subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`profile-live-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "profiles",
+          filter: `id=eq.${user.id}`,
+        },
+        (payload) => {
+          if (payload.new) {
+            setProfile(payload.new);
+            setIsAdmin(payload.new.role === "admin");
+          }
+        }
+      )
+      .subscribe();
+
+    const interval = setInterval(() => {
+      loadProfile(user.id);
+    }, 5000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
+  }, [user?.id]);
 
   const openFiveM = () => {
     window.location.href = `fivem://connect/${SERVER_IP}`;
@@ -749,8 +788,8 @@ function AccountPage({
                 {authMode === "login"
                   ? "Login"
                   : authMode === "signup"
-                    ? "Create Account"
-                    : "Reset Password"}
+                  ? "Create Account"
+                  : "Reset Password"}
               </button>
             </form>
           </>
