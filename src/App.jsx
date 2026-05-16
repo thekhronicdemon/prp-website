@@ -4,7 +4,7 @@ import { supabase } from "./supabaseClient";
 const SITE_URL = "https://thekhronicdemon.github.io/prp-website";
 
 function App() {
-  const [serverIp, setServerIp] = useState("YOUR_SERVER_IP:30120");
+  const [serverIp, setServerIp] = useState("LOCALHOST:30120");
   const [authMode, setAuthMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -247,7 +247,7 @@ function App() {
                   )}
 
                   <button className="primaryBtn" type="submit">
-                    {authMode === "login" ? "Login" : authMode === "signup" ? "Create Account" : "Send Reset Email"}
+                    {authMode === "login" ? "Login" : authMode === "signup" ? "Create Account" : "Requst Password Reset"}
                   </button>
                 </form>
               </>
