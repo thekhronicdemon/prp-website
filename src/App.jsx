@@ -153,8 +153,8 @@ function App() {
         <a className="brand" href="#home">
           <img src={`${import.meta.env.BASE_URL}assets/logo.png`} alt="Logo" />
           <div>
-            <strong>PROGRESSION RP</strong>
-            <span>FiveM Roleplay</span>
+            <strong>PROGRESSION</strong>
+            <span>Roleplay</span>
           </div>
         </a>
 
