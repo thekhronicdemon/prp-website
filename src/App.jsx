@@ -51,11 +51,22 @@ function App() {
 
     if (!userId && !userEmail) return null;
 
-    let query = supabase.from("profiles").select("*");
+    let { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .maybeSingle();
 
-    const { data, error } = userId
-      ? await query.eq("id", userId).maybeSingle()
-      : await query.eq("email", userEmail).maybeSingle();
+    if (!data && userEmail) {
+      const result = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("email", userEmail)
+        .maybeSingle();
+
+      data = result.data;
+      error = result.error;
+    }
 
     if (error) {
       console.log("PROFILE ERROR:", error);
@@ -84,7 +95,7 @@ function App() {
     const { data: existingProfile, error: checkError } = await supabase
       .from("profiles")
       .select("id")
-      .eq("id", authUser.id)
+      .eq("id", authUser)
       .maybeSingle();
 
     if (checkError) {
@@ -95,7 +106,7 @@ function App() {
 
     if (!existingProfile) {
       const { error } = await supabase.from("profiles").insert({
-        id: authUser.id,
+        id: authUser,
         email: authUser.email,
         username: cleanUsername,
         role: "user",
@@ -109,7 +120,7 @@ function App() {
       }
     }
 
-    await loadProfile(authUser.id);
+    await loadProfile(authUser);
   }
 
   async function handleSignup() {
