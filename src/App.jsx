@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   HashRouter,
   Routes,
@@ -9,7 +9,10 @@ import {
 
 import { supabase } from "./supabaseClient";
 
-const SITE_URL = "https://thekhronicdemon.github.io/prp-website";
+const SITE_URL =
+  typeof window !== "undefined"
+    ? `${window.location.origin}${import.meta.env.BASE_URL}`
+    : "https://thekhronicdemon.github.io/prp-website/";
 const SERVER_IP = "localhost:30120";
 
 function App() {
@@ -26,7 +29,9 @@ function App() {
 
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [events, setEvents] = useState([]);
+  const profileRequestId = useRef(0);
 
   const [isAdmin, setIsAdmin] = useState(false);
   const [message, setMessage] = useState("");
@@ -38,7 +43,7 @@ function App() {
     server_status: "Offline",
   });
 
-  async function loadProfile(authUserOrId) {
+  function getUserLookup(authUserOrId) {
     const userId =
       typeof authUserOrId === "string"
         ? authUserOrId
@@ -49,78 +54,140 @@ function App() {
         ? user?.email
         : authUserOrId?.email;
 
-    if (!userId && !userEmail) return null;
+    return {
+      userId: typeof userId === "string" ? userId : "",
+      userEmail: typeof userEmail === "string" ? userEmail : "",
+    };
+  }
 
-    let { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .maybeSingle();
+  async function fetchProfile(authUserOrId) {
+    const { userId, userEmail } = getUserLookup(authUserOrId);
 
-    if (!data && userEmail) {
+    if (!userId && !userEmail) return { data: null, error: null };
+
+    if (userId) {
       const result = await supabase
         .from("profiles")
         .select("*")
-        .eq("email", userEmail)
+        .eq("id", userId)
         .maybeSingle();
 
-      data = result.data;
-      error = result.error;
+      if (result.data || result.error || !userEmail) return result;
     }
 
-    if (error) {
-      console.log("PROFILE ERROR:", error);
-      setMessage(error.message);
-      return null;
+    return supabase
+      .from("profiles")
+      .select("*")
+      .eq("email", userEmail)
+      .maybeSingle();
+  }
+
+  function applyProfile(nextProfile) {
+    setProfile(nextProfile);
+    setIsAdmin(nextProfile?.role === "admin");
+  }
+
+  async function loadProfile(authUserOrId) {
+    const requestId = ++profileRequestId.current;
+
+    setProfileLoading(true);
+
+    try {
+      const { data, error } = await fetchProfile(authUserOrId);
+
+      if (requestId !== profileRequestId.current) return data ?? null;
+
+      if (error) {
+        console.log("PROFILE ERROR:", error);
+        setMessage(error.message);
+        return null;
+      }
+
+      applyProfile(data ?? null);
+
+      return data ?? null;
+    } finally {
+      if (requestId === profileRequestId.current) {
+        setProfileLoading(false);
+      }
     }
-
-    if (!data) {
-      setProfile(null);
-      return null;
-    }
-
-    setProfile(data);
-    setIsAdmin(data.role === "admin");
-
-    return data;
   }
 
   async function createProfileIfMissing(authUser, fallbackUsername = "") {
+    if (!authUser?.id) return null;
+
+    const requestId = ++profileRequestId.current;
+
+    setProfileLoading(true);
+
     const cleanUsername =
       fallbackUsername?.trim() ||
-      authUser.user_metadata?.username ||
+      authUser.user_metadata?.username?.trim() ||
       authUser.email?.split("@")[0] ||
       "User";
 
-    const { data: existingProfile, error: checkError } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("id", authUser)
-      .maybeSingle();
+    try {
+      const { data: existingProfile, error: checkError } =
+        await fetchProfile(authUser);
 
-    if (checkError) {
-      console.log("Profile check error:", checkError);
-      setMessage(checkError.message);
-      return;
-    }
+      if (requestId !== profileRequestId.current) return existingProfile ?? null;
 
-    if (!existingProfile) {
-      const { error } = await supabase.from("profiles").insert({
-        id: authUser,
-        email: authUser.email,
-        username: cleanUsername,
-        role: "user",
-        subscription: "none",
-      });
+      if (checkError) {
+        console.log("Profile check error:", checkError);
+        setMessage(checkError.message);
+        return null;
+      }
+
+      if (existingProfile) {
+        applyProfile(existingProfile);
+        return existingProfile;
+      }
+
+      const { data: createdProfile, error } = await supabase
+        .from("profiles")
+        .insert({
+          id: authUser.id,
+          email: authUser.email,
+          username: cleanUsername,
+          role: "user",
+          subscription: "none",
+        })
+        .select("*")
+        .maybeSingle();
+
+      if (requestId !== profileRequestId.current) return createdProfile ?? null;
 
       if (error) {
+        if (error.code === "23505") {
+          return loadProfile(authUser);
+        }
+
         console.log("Profile create error:", error);
         setMessage(error.message);
-        return;
+        return null;
+      }
+
+      applyProfile(createdProfile ?? null);
+
+      return createdProfile ?? null;
+    } finally {
+      if (requestId === profileRequestId.current) {
+        setProfileLoading(false);
       }
     }
+  }
 
-    await loadProfile(authUser);
+  async function syncAuthUser(authUser, fallbackUsername = "") {
+    if (!authUser?.id) {
+      profileRequestId.current += 1;
+      setUser(null);
+      applyProfile(null);
+      setProfileLoading(false);
+      return null;
+    }
+
+    setUser(authUser);
+    return createProfileIfMissing(authUser, fallbackUsername);
   }
 
   async function handleSignup() {
@@ -148,7 +215,11 @@ function App() {
     }
 
     if (data?.user) {
-      await createProfileIfMissing(data.user, username);
+      if (data.session) {
+        await syncAuthUser(data.user, username);
+      } else {
+        await createProfileIfMissing(data.user, username);
+      }
     }
 
     setMessage("Check email verification");
@@ -167,8 +238,7 @@ function App() {
       return;
     }
 
-    setUser(data.user);
-    await createProfileIfMissing(data.user);
+    await syncAuthUser(data.user);
 
     setEmail("");
     setPassword("");
@@ -188,8 +258,9 @@ function App() {
 
   async function handleLogout() {
     setUser(null);
-    setProfile(null);
-    setIsAdmin(false);
+    profileRequestId.current += 1;
+    applyProfile(null);
+    setProfileLoading(false);
 
     setEmail("");
     setConfirmEmail("");
@@ -361,14 +432,7 @@ function App() {
         data: { session },
       } = await supabase.auth.getSession();
 
-      const user = session?.user ?? null;
-
-      setUser(user);
-
-      if (user) {
-        await createProfileIfMissing(user);
-        await loadProfile(user);
-      }
+      await syncAuthUser(session?.user ?? null);
 
       loadAdminStats();
       loadEvents();
@@ -376,19 +440,19 @@ function App() {
 
     init();
 
+    let authChangeTimer = null;
+
     const { data: listener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (event, session) => {
+        if (event === "INITIAL_SESSION") return;
+
         const currentUser = session?.user ?? null;
 
-        setUser(currentUser);
+        if (authChangeTimer) window.clearTimeout(authChangeTimer);
 
-        if (currentUser) {
-          await createProfileIfMissing(currentUser);
-          await loadProfile(currentUser);
-        } else {
-          setProfile(null);
-          setIsAdmin(false);
-        }
+        authChangeTimer = window.setTimeout(() => {
+          syncAuthUser(currentUser);
+        }, 0);
       }
     );
 
@@ -400,15 +464,19 @@ function App() {
       const user = session?.user ?? null;
 
       if (user) {
+        setUser(user);
         await loadProfile(user);
         await loadAdminStats();
         await loadEvents();
+      } else {
+        await syncAuthUser(null);
       }
     };
 
     window.addEventListener("focus", focusRefresh);
 
     return () => {
+      if (authChangeTimer) window.clearTimeout(authChangeTimer);
       listener.subscription.unsubscribe();
       window.removeEventListener("focus", focusRefresh);
     };
@@ -416,8 +484,6 @@ function App() {
 
   useEffect(() => {
     if (!user?.id) return;
-
-    loadProfile(user);
 
     const channel = supabase
       .channel(`profile-live-${user.id}`)
@@ -460,8 +526,12 @@ function App() {
       platinum: "Platinum Priority",
     };
 
+    const label = labelMap[sub];
+
+    if (!label) return "No Subscription";
+
     if (!profile?.subscription_expires_at) {
-      return labelMap[sub] || "No Subscription";
+      return label;
     }
 
     const end = new Date(profile.subscription_expires_at);
@@ -471,7 +541,7 @@ function App() {
       Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
     );
 
-    return `${labelMap[sub]} - ${days} days left`;
+    return `${label} - ${days} days left`;
   }
 
   return (
@@ -519,6 +589,7 @@ function App() {
                 <AccountPage
                   user={user}
                   profile={profile}
+                  profileLoading={profileLoading}
                   authMode={authMode}
                   setAuthMode={setAuthMode}
                   email={email}
@@ -745,6 +816,7 @@ function ShopPage() {
 function AccountPage({
   user,
   profile,
+  profileLoading,
   authMode,
   setAuthMode,
   email,
@@ -846,7 +918,9 @@ function AccountPage({
             <div className="accountInfo">
               <div>
                 <span>Username</span>
-                <strong>{profile?.username || "Loading..."}</strong>
+                <strong>
+                  {profileLoading ? "Loading..." : profile?.username || "Not set"}
+                </strong>
               </div>
 
               <div>
@@ -857,7 +931,7 @@ function AccountPage({
               <div>
                 <span>Active Subscription</span>
                 <strong className={`subBadge ${profile?.subscription || "none"}`}>
-                  {getSubLabel()}
+                  {profileLoading ? "Loading..." : getSubLabel()}
                 </strong>
               </div>
             </div>
