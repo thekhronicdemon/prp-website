@@ -151,6 +151,14 @@ function App() {
   const [ticketNotice, setTicketNotice] = useState("");
   const [ticketsLoading, setTicketsLoading] = useState(false);
   const activeTicketIdRef = useRef(null);
+  const [streamers, setStreamers] = useState([]);
+  const [streamerForm, setStreamerForm] = useState({
+    name: "",
+    twitch_username: "",
+    profile_image_url: "",
+  });
+  const [streamerNotice, setStreamerNotice] = useState("");
+
 
   function getUserLookup(authUserOrId) {
     const userId =
@@ -167,6 +175,87 @@ function App() {
       userId: typeof userId === "string" ? userId : "",
       userEmail: typeof userEmail === "string" ? userEmail : "",
     };
+  }
+  async function loadStreamers() {
+    const { data, error } = await supabase
+      .from("streamers")
+      .select("*")
+      .eq("is_active", true)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.log("Streamer load error:", error);
+      return;
+    }
+
+    setStreamers(data || []);
+  }
+
+  async function addStreamer(e) {
+    e.preventDefault();
+    setStreamerNotice("");
+
+    if (!isAdmin) return;
+
+    const name = streamerForm.name.trim();
+
+    const twitchUsername = streamerForm.twitch_username
+      .trim()
+      .replace("https://www.twitch.tv/", "")
+      .replace("https://twitch.tv/", "")
+      .replace("www.twitch.tv/", "")
+      .replace("twitch.tv/", "")
+      .replace("@", "")
+      .replace("/", "");
+
+    const profileImageUrl =
+      streamerForm.profile_image_url.trim();
+
+    if (!name || !twitchUsername || !profileImageUrl) {
+      setStreamerNotice(
+        "Add a name, Twitch username, and profile image URL."
+      );
+      return;
+    }
+
+    const { error } =
+      await supabase.from("streamers").insert({
+        name,
+        twitch_username: twitchUsername,
+        profile_image_url: profileImageUrl,
+        is_active: true,
+      });
+
+    if (error) {
+      setStreamerNotice(error.message);
+      return;
+    }
+
+    setStreamerForm({
+      name: "",
+      twitch_username: "",
+      profile_image_url: "",
+    });
+
+    setStreamerNotice("Streamer added.");
+    await loadStreamers();
+  }
+
+  async function removeStreamer(id) {
+    if (!isAdmin) return;
+
+    const { error } = await supabase
+      .from("streamers")
+      .update({ is_active: false })
+      .eq("id", id);
+
+    if (error) {
+      setStreamerNotice(error.message);
+      return;
+    }
+
+    setStreamerNotice("Streamer removed.");
+    await loadStreamers();
   }
 
   async function fetchProfile(authUserOrId) {
@@ -756,6 +845,7 @@ function App() {
 
       loadAdminStats();
       loadEvents();
+      loadStreamers();
     }
 
     init();
@@ -770,8 +860,9 @@ function App() {
 
         if (authChangeTimer) window.clearTimeout(authChangeTimer);
 
-        authChangeTimer = window.setTimeout(() => {
-          syncAuthUser(currentUser);
+        authChangeTimer = window.setTimeout(async () => {
+          await syncAuthUser(currentUser);
+          await loadStreamers();
         }, 0);
       }
     );
@@ -788,6 +879,7 @@ function App() {
         await loadProfile(user);
         await loadAdminStats();
         await loadEvents();
+        await loadStreamers();
       } else {
         await syncAuthUser(null);
       }
@@ -896,6 +988,15 @@ function App() {
   const ticketProps = {
     user,
     profile,
+
+    streamers,
+    streamerForm,
+    setStreamerForm,
+    streamerNotice,
+
+    addStreamer,
+    removeStreamer,
+
     tickets,
     activeTicket,
     activeTicketId,
@@ -934,6 +1035,7 @@ function App() {
           <nav>
             <Link to="/">Home</Link>
             <Link to="/about">About</Link>
+            <Link to="/streamers">Streamers</Link>
             <Link to="/shop">Shop</Link>
             <Link to="/account">{user ? "Account" : "Login / Sign Up"}</Link>
             {isAdmin && <Link to="/admin">Admin</Link>}
@@ -948,7 +1050,7 @@ function App() {
             />
 
             <Route path="/about" element={<AboutPage />} />
-
+            <Route path="/streamers" element={<StreamerPage streamers={streamers} />} />
             <Route path="/shop" element={<ShopPage />} />
 
             <Route
@@ -1066,6 +1168,77 @@ function HomePage({ events, openFiveM }) {
         </div>
       </section>
     </>
+  );
+}
+
+function StreamerPage({ streamers }) {
+  const twitchParent = window.location.hostname;
+
+  return (
+    <section className="section">
+      <p className="eyebrow">STREAMERS IN THE CITY</p>
+
+      <h2>Progression Roleplay Streamers</h2>
+
+      <p className="sectionText">
+        Watch Progression RP streamers directly from the website.
+      </p>
+
+      <div style={{ marginBottom: "20px" }}>
+        <a
+          className="primaryBtn"
+          href="https://www.twitch.tv/login"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Login to Twitch
+        </a>
+      </div>
+
+      <div className="streamerGrid">
+        {streamers.length === 0 ? (
+          <div className="eventBubble">
+            <strong>No streamers added yet.</strong>
+          </div>
+        ) : (
+          streamers.map((streamer) => (
+            <div
+              className="streamerCard"
+              key={streamer.id}
+            >
+              <div className="streamBox">
+                <iframe
+                  src={`https://player.twitch.tv/?channel=${streamer.twitch_username}&parent=${twitchParent}`}
+                  title={`${streamer.name} Twitch Stream`}
+                  allowFullScreen
+                  allow="autoplay; fullscreen"
+                />
+              </div>
+
+              <div className="streamerInfoSmall">
+                <img
+                  src={streamer.profile_image_url}
+                  alt={streamer.name}
+                />
+
+                <div>
+                  <h3>{streamer.name}</h3>
+
+                  <a
+                    href={`https://twitch.tv/${streamer.twitch_username}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    @{streamer.twitch_username}
+                  </a>
+                </div>
+              </div>
+
+            </div>
+          ))
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -1456,6 +1629,15 @@ function TicketWorkspace({
   mode,
   user,
   profile,
+
+  streamers,
+  streamerForm,
+  setStreamerForm,
+  streamerNotice,
+
+  addStreamer,
+  removeStreamer,
+
   tickets,
   activeTicket,
   activeTicketId,
@@ -1537,9 +1719,8 @@ function TicketWorkspace({
                 return (
                   <button
                     type="button"
-                    className={`ticketItem ${
-                      activeTicketId === ticket.id ? "active" : ""
-                    }`}
+                    className={`ticketItem ${activeTicketId === ticket.id ? "active" : ""
+                      }`}
                     key={ticket.id}
                     onClick={() => setActiveTicketId(ticket.id)}
                   >
@@ -1622,15 +1803,13 @@ function TicketWorkspace({
 
                     return (
                       <div
-                        className={`chatMessage ${
-                          fromAdmin ? "adminMessage" : "memberMessage"
-                        }`}
+                        className={`chatMessage ${fromAdmin ? "adminMessage" : "memberMessage"
+                          }`}
                         key={message.id}
                       >
                         <span
-                          className={`chatRole ${
-                            fromAdmin ? "adminRole" : "memberRole"
-                          }`}
+                          className={`chatRole ${fromAdmin ? "adminRole" : "memberRole"
+                            }`}
                         >
                           {fromAdmin ? "ADMIN" : isAdminMode ? memberName : "You"}
                         </span>
@@ -1674,7 +1853,11 @@ function TicketWorkspace({
   );
 }
 
-function AdminPage({ isAdmin, adminStats, ticketProps }) {
+function AdminPage({
+  isAdmin,
+  adminStats,
+  ticketProps
+}) {
   if (!isAdmin) return <Navigate to="/account" replace />;
 
   return (
@@ -1706,7 +1889,95 @@ function AdminPage({ isAdmin, adminStats, ticketProps }) {
           </div>
         </div>
       </section>
+      <section className="section">
 
+        <p className="eyebrow">
+          STREAMER MANAGEMENT
+        </p>
+
+        <h2>Add Streamers</h2>
+
+        <form
+          className="streamerAdminForm"
+          onSubmit={ticketProps.addStreamer}
+        >
+
+          <input
+            placeholder="Streamer Name"
+            value={ticketProps.streamerForm.name}
+            onChange={(e) =>
+              ticketProps.setStreamerForm((c) => ({
+                ...c,
+                name: e.target.value
+              }))
+            }
+          />
+
+          <input
+            placeholder="Twitch Username or URL"
+            value={ticketProps.streamerForm.twitch_username}
+            onChange={(e) =>
+              ticketProps.setStreamerForm((c) => ({
+                ...c,
+                twitch_username: e.target.value
+              }))
+            }
+          />
+
+          <input
+            placeholder="Profile Image URL"
+            value={ticketProps.streamerForm.profile_image_url}
+            onChange={(e) =>
+              ticketProps.setStreamerForm((c) => ({
+                ...c,
+                profile_image_url: e.target.value
+              }))
+            }
+          />
+
+          <button
+            className="primaryBtn"
+            type="submit"
+          >
+            Add Streamer
+          </button>
+
+        </form>
+
+        {ticketProps.streamerNotice && (
+          <p className="message">
+            {ticketProps.streamerNotice}
+          </p>
+        )}
+
+        <div className="streamerAdminList">
+
+          {ticketProps.streamers.map((s) => (
+
+            <div
+              className="streamerAdminItem"
+              key={s.id}
+            >
+
+              <span>{s.name}</span>
+
+              <button
+                type="button"
+                className="primaryBtn"
+                onClick={() =>
+                  ticketProps.removeStreamer(s.id)
+                }
+              >
+                Remove
+              </button>
+
+            </div>
+
+          ))}
+
+        </div>
+
+      </section>
       <section className="section">
         <p className="eyebrow">SUPPORT DESK</p>
         <h2>Member Tickets</h2>
