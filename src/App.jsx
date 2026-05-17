@@ -1610,7 +1610,7 @@ function TicketWorkspace({
                 {!isAdminMode && (
                   <div className="adminNotice">
                     <span>ADMIN</span>
-                    <p>You are currently talking to an admin.</p>
+                    <p>Your ticket has been recieved please wait while we find an Admin for you.</p>
                   </div>
                 )}
 
