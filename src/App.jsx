@@ -38,29 +38,34 @@ function App() {
     server_status: "Offline",
   });
 
-  async function loadProfile(userId) {
-    console.log("Loading profile for:", userId);
+  async function loadProfile(authUser) {
+    if (!authUser) return null;
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("profiles")
       .select("*")
-      .eq("id", userId)
+      .eq("id", authUser.id)
       .maybeSingle();
 
-    console.log("PROFILE RESULT:", { data, error });
+    if (!data && authUser.email) {
+      const result = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("email", authUser.email)
+        .maybeSingle();
+
+      data = result.data;
+      error = result.error;
+    }
 
     if (error) {
+      console.log("PROFILE ERROR:", error);
       setMessage(error.message);
       return null;
     }
 
-    if (!data) {
-      setProfile(null);
-      return null;
-    }
-
     setProfile(data);
-    setIsAdmin(data.role === "admin");
+    setIsAdmin(data?.role === "admin");
 
     return data;
   }
@@ -347,7 +352,7 @@ function App() {
 
       if (user) {
         await createProfileIfMissing(user);
-        await loadProfile(user.id);
+        await loadProfile(user);
       }
 
       loadAdminStats();
@@ -364,7 +369,7 @@ function App() {
 
         if (currentUser) {
           await createProfileIfMissing(currentUser);
-          await loadProfile(currentUser.id);
+          await loadProfile(currentUser);
         } else {
           setProfile(null);
           setIsAdmin(false);
@@ -380,7 +385,7 @@ function App() {
       const user = session?.user ?? null;
 
       if (user) {
-        await loadProfile(user.id);
+        await loadProfile(user);
         await loadAdminStats();
         await loadEvents();
       }
@@ -397,7 +402,7 @@ function App() {
   useEffect(() => {
     if (!user?.id) return;
 
-    loadProfile(user.id);
+    loadProfile(user);
 
     const channel = supabase
       .channel(`profile-live-${user.id}`)
@@ -826,7 +831,7 @@ function AccountPage({
             <div className="accountInfo">
               <div>
                 <span>Username</span>
-                <strong>{profile?.username || user?.user_metadata?.username || "Not set"}</strong>
+                <strong>{profile?.username || "Loading..."}</strong>
               </div>
 
               <div>
