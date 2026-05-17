@@ -25,7 +25,8 @@ a {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -303,6 +304,10 @@ h2 {
 
 .card {
 
+  position: relative;
+
+  overflow: hidden;
+
   padding: 30px;
 
   border-radius: 28px;
@@ -313,6 +318,55 @@ h2 {
   border:
     1px solid rgba(255, 255, 255, .1);
 
+}
+
+.shopCard {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.shopCardHeader {
+  min-height: 42px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.popularBadge {
+  color: #ffd766;
+  background: rgba(212, 175, 55, .12);
+  border: 1px solid rgba(212, 175, 55, .25);
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  font-weight: bold;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.tierImage {
+  width: 100%;
+  aspect-ratio: 1 / .72;
+  object-fit: contain;
+  padding: 12px;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, .28);
+  border: 1px solid rgba(255, 255, 255, .08);
+}
+
+.card ul {
+  display: grid;
+  gap: 10px;
+  color: #d6d6d6;
+  line-height: 1.5;
+  margin-left: 18px;
+}
+
+.card a {
+  margin-top: auto;
 }
 
 .card.popular {
@@ -415,6 +469,19 @@ input {
 
   color: white;
 
+}
+
+textarea {
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+  padding: 15px;
+  background:
+    rgba(0, 0, 0, .38);
+  border:
+    1px solid rgba(255, 255, 255, .12);
+  border-radius: 15px;
+  color: white;
 }
 
 .loggedIn {
@@ -538,7 +605,7 @@ footer {
 }
 
 .accountWide {
-  width: min(100%, 850px);
+  width: min(100%, 1100px);
 }
 
 .accountPanel {
@@ -563,10 +630,51 @@ footer {
 }
 
 .subBadge {
-  display: inline-block;
-  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 42px;
+  padding: 7px 14px 7px 10px;
   border-radius: 999px;
   margin-top: 4px;
+  font-weight: 800;
+  line-height: 1.2;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.accountInfo .subBadge {
+  display: inline-flex;
+  margin-bottom: 0;
+}
+
+.subBadge img {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  display: block;
+}
+
+.subBadge span {
+  display: inline;
+  margin-bottom: 0;
+  color: inherit;
+}
+
+.subBadge.compact {
+  min-height: 32px;
+  padding: 5px 9px;
+  font-size: 12px;
+  margin-top: 0;
+}
+
+.subBadge.compact img {
+  width: 22px;
+  height: 22px;
 }
 
 .subBadge.none {
@@ -593,9 +701,227 @@ footer {
   align-content: start;
 }
 
+.ticketDesk {
+  display: grid;
+  gap: 22px;
+  margin-top: 30px;
+}
+
+.adminDesk {
+  margin-top: 24px;
+}
+
+.ticketCreate,
+.ticketListPanel,
+.ticketConversation {
+  padding: 22px;
+  border-radius: 22px;
+  background: rgba(255,255,255,.055);
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+.ticketCreate h3,
+.ticketListHeader h3,
+.ticketHeader h3 {
+  margin: 6px 0 0;
+}
+
+.ticketLayout {
+  display: grid;
+  grid-template-columns: minmax(230px, .72fr) minmax(0, 1.28fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.ticketListHeader,
+.ticketHeader,
+.memberLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ticketListHeader span,
+.ticketItem small,
+.ticketItem time,
+.chatMessage time,
+.emptyState,
+.closedNotice {
+  color: #aaa;
+}
+
+.ticketList {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.ticketItem {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  text-align: left;
+  padding: 14px;
+  border-radius: 16px;
+  color: white;
+  background: rgba(0,0,0,.25);
+  border: 1px solid rgba(255,255,255,.08);
+  cursor: pointer;
+}
+
+.ticketItem.active {
+  border-color: rgba(212,175,55,.65);
+  box-shadow: 0 0 26px rgba(212,175,55,.1);
+}
+
+.statusBadge {
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.statusBadge.open {
+  color: #082414;
+  background: #59d98a;
+}
+
+.statusBadge.closed {
+  color: #ddd;
+  background: #444;
+}
+
+.ticketConversation {
+  min-height: 520px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 16px;
+}
+
+.conversationEmpty {
+  min-height: 420px;
+  display: grid;
+  place-items: center;
+}
+
+.chatWindow {
+  min-height: 300px;
+  max-height: 520px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(0,0,0,.28);
+  border: 1px solid rgba(255,255,255,.06);
+}
+
+.adminNotice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(29, 117, 255, .12);
+  border: 1px solid rgba(58, 142, 255, .35);
+}
+
+.adminNotice span,
+.chatRole.adminRole {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: white;
+  background: #1d75ff;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+}
+
+.adminNotice p {
+  color: #dbe9ff;
+}
+
+.chatMessage {
+  max-width: min(78%, 560px);
+  display: grid;
+  gap: 7px;
+  padding: 13px;
+  border-radius: 18px;
+  line-height: 1.5;
+}
+
+.chatMessage p {
+  white-space: pre-wrap;
+}
+
+.adminMessage {
+  align-self: flex-start;
+  background: rgba(29,117,255,.18);
+  border: 1px solid rgba(58,142,255,.34);
+}
+
+.memberMessage {
+  align-self: flex-end;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+}
+
+.chatRole.memberRole {
+  display: inline-flex;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: #080808;
+  background: #ffd766;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+}
+
+.ticketReplyBox {
+  grid-template-columns: 1fr auto;
+  align-items: end;
+}
+
+.ticketReplyBox textarea {
+  min-height: 92px;
+}
+
+.statusToggle {
+  white-space: nowrap;
+}
+
+.closedNotice {
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(255,255,255,.055);
+  border: 1px solid rgba(255,255,255,.08);
+}
+
 @media(max-width:850px){
   .aboutGrid,
-  .accountPanel {
+  .accountPanel,
+  .ticketLayout,
+  .ticketReplyBox {
     grid-template-columns: 1fr;
+  }
+
+  .ticketHeader,
+  .memberLine {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .chatMessage {
+    max-width: 100%;
   }
 }
