@@ -1080,22 +1080,22 @@ function AdminPage({ isAdmin, adminStats }) {
       <div className="adminGrid">
         <div>
           <span>Users</span>
-          <b>{adminStats.active_users}</b>
+          <b> {adminStats.active_users}</b>
         </div>
 
         <div>
           <span>Tickets</span>
-          <b>{adminStats.tickets}</b>
+          <b> {adminStats.tickets}</b>
         </div>
 
         <div>
           <span>Revenue</span>
-          <b>${adminStats.revenue}</b>
+          <b> ${adminStats.revenue}</b>
         </div>
 
         <div>
           <span>Status</span>
-          <b>{adminStats.server_status}</b>
+          <b> {adminStats.server_status}</b>
         </div>
       </div>
     </section>
