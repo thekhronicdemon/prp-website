@@ -38,25 +38,24 @@ function App() {
     server_status: "Offline",
   });
 
-  async function loadProfile(authUser) {
-    if (!authUser) return null;
+  async function loadProfile(authUserOrId) {
+    const userId =
+      typeof authUserOrId === "string"
+        ? authUserOrId
+        : authUserOrId?.id;
 
-    let { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", authUser.id)
-      .maybeSingle();
+    const userEmail =
+      typeof authUserOrId === "string"
+        ? user?.email
+        : authUserOrId?.email;
 
-    if (!data && authUser.email) {
-      const result = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("email", authUser.email)
-        .maybeSingle();
+    if (!userId && !userEmail) return null;
 
-      data = result.data;
-      error = result.error;
-    }
+    let query = supabase.from("profiles").select("*");
+
+    const { data, error } = userId
+      ? await query.eq("id", userId).maybeSingle()
+      : await query.eq("email", userEmail).maybeSingle();
 
     if (error) {
       console.log("PROFILE ERROR:", error);
@@ -64,8 +63,13 @@ function App() {
       return null;
     }
 
+    if (!data) {
+      setProfile(null);
+      return null;
+    }
+
     setProfile(data);
-    setIsAdmin(data?.role === "admin");
+    setIsAdmin(data.role === "admin");
 
     return data;
   }
