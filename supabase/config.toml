@@ -1,0 +1,2 @@
+[functions.twitch-streams]
+verify_jwt = false

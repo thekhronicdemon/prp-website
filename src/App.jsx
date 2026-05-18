@@ -14,6 +14,14 @@ const SITE_URL =
     ? `${window.location.origin}${import.meta.env.BASE_URL}`
     : "https://thekhronicdemon.github.io/prp-website/";
 const SERVER_IP = "localhost:30120";
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+const DEFAULT_TWITCH_PROXY_URL = import.meta.env.VITE_SUPABASE_URL
+  ? `${import.meta.env.VITE_SUPABASE_URL.replace(/\/$/, "")}/functions/v1/twitch-streams`
+  : "";
+const TWITCH_PROXY_URL =
+  import.meta.env.VITE_TWITCH_PROXY_URL || DEFAULT_TWITCH_PROXY_URL;
+const TWITCH_CLIENT_ID = import.meta.env.VITE_TWITCH_CLIENT_ID || "";
+const TWITCH_ACCESS_TOKEN = import.meta.env.VITE_TWITCH_ACCESS_TOKEN || "";
 const SUBSCRIPTIONS = {
   bronze: {
     label: "Bronze Priority",
@@ -113,6 +121,27 @@ function formatDateTime(value) {
   return new Date(value).toLocaleString();
 }
 
+function normalizeTwitchUsername(value) {
+  let username = (value || "").trim();
+
+  try {
+    if (/^https?:\/\//i.test(username)) {
+      username = new URL(username).pathname;
+    }
+  } catch {
+    // Fall through to the string cleanup below.
+  }
+
+  return username
+    .trim()
+    .replace(/^https?:\/\/(www\.)?twitch\.tv\//i, "")
+    .replace(/^(www\.)?twitch\.tv\//i, "")
+    .replace(/^@/, "")
+    .split(/[/?#]/)[0]
+    .replace(/\s+/g, "")
+    .toLowerCase();
+}
+
 function App() {
   const [authMode, setAuthMode] = useState("login");
 
@@ -152,6 +181,7 @@ function App() {
   const [ticketsLoading, setTicketsLoading] = useState(false);
   const activeTicketIdRef = useRef(null);
   const [streamers, setStreamers] = useState([]);
+  const [liveData, setLiveData] = useState([]);
   const [streamerForm, setStreamerForm] = useState({
     name: "",
     twitch_username: "",
@@ -176,6 +206,79 @@ function App() {
       userEmail: typeof userEmail === "string" ? userEmail : "",
     };
   }
+
+  async function loadTwitchLiveData(streamerList) {
+    if (!streamerList?.length) {
+      setLiveData([]);
+      return;
+    }
+
+    try {
+      const names = [
+        ...new Set(
+          streamerList
+            .map((s) => normalizeTwitchUsername(s.twitch_username))
+            .filter(Boolean)
+        ),
+      ];
+
+      if (names.length === 0) {
+        setLiveData([]);
+        return;
+      }
+
+      let streams = [];
+
+      if (TWITCH_PROXY_URL) {
+        const url = new URL(TWITCH_PROXY_URL, window.location.origin);
+        url.searchParams.set("users", names.join(","));
+        const headers = {};
+
+        if (
+          TWITCH_PROXY_URL === DEFAULT_TWITCH_PROXY_URL &&
+          SUPABASE_ANON_KEY
+        ) {
+          headers.apikey = SUPABASE_ANON_KEY;
+          headers.Authorization = `Bearer ${SUPABASE_ANON_KEY}`;
+        }
+
+        const res = await fetch(url.toString(), { headers });
+        if (!res.ok) throw new Error(`Twitch proxy failed: ${res.status}`);
+
+        const data = await res.json();
+
+        streams = Array.isArray(data) ? data : data?.streams || data?.data || [];
+      } else if (TWITCH_CLIENT_ID && TWITCH_ACCESS_TOKEN) {
+        const url = new URL("https://api.twitch.tv/helix/streams");
+
+        names.forEach((name) => {
+          url.searchParams.append("user_login", name);
+        });
+
+        const res = await fetch(url.toString(), {
+          headers: {
+            "Client-ID": TWITCH_CLIENT_ID,
+            Authorization: `Bearer ${TWITCH_ACCESS_TOKEN}`,
+          },
+        });
+        if (!res.ok) throw new Error(`Twitch API failed: ${res.status}`);
+
+        const data = await res.json();
+
+        streams = data?.data || [];
+      } else {
+        setLiveData([]);
+        return;
+      }
+
+      setLiveData(streams);
+
+    } catch (e) {
+      console.log("Twitch API error", e);
+      setLiveData([]);
+    }
+  }
+
   async function loadStreamers() {
     const { data, error } = await supabase
       .from("streamers")
@@ -188,7 +291,11 @@ function App() {
       return;
     }
 
-    setStreamers(data || []);
+    const rows = data || [];
+
+    setStreamers(rows);
+
+    await loadTwitchLiveData(rows);
   }
 
   async function addStreamer(e) {
@@ -199,14 +306,7 @@ function App() {
 
     const name = streamerForm.name.trim();
 
-    const twitchUsername = streamerForm.twitch_username
-      .trim()
-      .replace("https://www.twitch.tv/", "")
-      .replace("https://twitch.tv/", "")
-      .replace("www.twitch.tv/", "")
-      .replace("twitch.tv/", "")
-      .replace("@", "")
-      .replace("/", "");
+    const twitchUsername = normalizeTwitchUsername(streamerForm.twitch_username);
 
     const profileImageUrl =
       streamerForm.profile_image_url.trim();
@@ -887,8 +987,13 @@ function App() {
 
     window.addEventListener("focus", focusRefresh);
 
+    const streamerRefresh = window.setInterval(() => {
+      loadStreamers();
+    }, 60000);
+
     return () => {
       if (authChangeTimer) window.clearTimeout(authChangeTimer);
+      window.clearInterval(streamerRefresh);
       listener.subscription.unsubscribe();
       window.removeEventListener("focus", focusRefresh);
     };
@@ -1050,7 +1155,15 @@ function App() {
             />
 
             <Route path="/about" element={<AboutPage />} />
-            <Route path="/streamers" element={<StreamerPage streamers={streamers} />} />
+            <Route
+              path="/streamers"
+              element={
+                <StreamerPage
+                  streamers={streamers}
+                  liveData={liveData}
+                />
+              }
+            />
             <Route path="/shop" element={<ShopPage />} />
 
             <Route
@@ -1171,12 +1284,168 @@ function HomePage({ events, openFiveM }) {
   );
 }
 
-function StreamerPage({ streamers }) {
+function LegacyStreamerPage({ streamers, liveData = [] }) {
   const twitchParent = window.location.hostname;
+
+  const merged = streamers
+    .map((s) => {
+
+      const live = liveData.find(
+        x =>
+          x.user_login?.toLowerCase() ===
+          s.twitch_username?.toLowerCase()
+      );
+
+      return {
+        ...s,
+        live: !!live,
+        viewers: live?.viewer_count || 0,
+        thumbnail:
+          live?.thumbnail_url
+            ?.replace("{width}", "800")
+            ?.replace("{height}", "450")
+      };
+    })
+
+    .sort((a, b) => {
+
+      if (a.live && !b.live) return -1;
+
+      if (!a.live && b.live) return 1;
+
+      return b.viewers - a.viewers;
+
+    });
 
   return (
     <section className="section">
-      <p className="eyebrow">STREAMERS IN THE CITY</p>
+
+      <p className="eyebrow">
+        STREAMERS IN THE CITY
+      </p>
+
+      <h2>
+        Progression Roleplay Streamers
+      </h2>
+
+      <div className="streamerGrid">
+
+        {merged.map((streamer) => (
+
+          <div
+            className="streamerCard"
+            key={streamer.id}
+          >
+
+            {streamer.live && (
+
+              <div className="liveBubble">
+
+                LIVE • {streamer.viewers}
+
+              </div>
+
+            )}
+
+            <div className="streamBox">
+
+              {streamer.live ? (
+
+                <iframe
+                  src={`https://player.twitch.tv/?channel=${streamer.twitch_username}&parent=${twitchParent}`}
+                  allowFullScreen
+                />
+
+              ) : (
+
+                <img
+                  src={
+                    streamer.profile_image_url
+                  }
+                  className="offlineBanner"
+                />
+
+              )}
+
+            </div>
+
+            <div className="streamerInfoSmall">
+
+              <img
+                src={streamer.profile_image_url}
+                alt=""
+              />
+
+              <div>
+
+                <h3>
+                  {streamer.name}
+                </h3>
+
+                <span>
+                  @{streamer.twitch_username}
+                </span>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        ))}
+
+      </div>
+
+    </section>
+  );
+}
+
+function StreamerPage({ streamers, liveData = [] }) {
+  const twitchParent = window.location.hostname;
+
+  const merged = streamers
+    .map((streamer) => {
+      const twitchUsername = normalizeTwitchUsername(streamer.twitch_username);
+      const live = liveData.find(
+        (item) =>
+          normalizeTwitchUsername(item.user_login || item.user_name) ===
+          twitchUsername
+      );
+      const offlineImage =
+        streamer.offline_image_url ||
+        streamer.banner_image_url ||
+        streamer.profile_image_url ||
+        assetUrl("logo.png");
+
+      return {
+        ...streamer,
+        twitch_username: twitchUsername,
+        live: !!live,
+        viewers: live?.viewer_count || 0,
+        gameName: live?.game_name || "",
+        title: live?.title || "",
+        thumbnail: live?.thumbnail_url
+          ?.replace("{width}", "800")
+          ?.replace("{height}", "450"),
+        offlineImage,
+      };
+    })
+    .sort((a, b) => {
+      if (a.live && !b.live) return -1;
+      if (!a.live && b.live) return 1;
+      if (a.live && b.live) return b.viewers - a.viewers;
+      return a.name.localeCompare(b.name);
+    });
+  const liveCount = merged.filter((streamer) => streamer.live).length;
+
+  return (
+    <section className="section streamerSection">
+      <div className="streamerTitleRow">
+        <p className="eyebrow">PARTNERS & CREATORS</p>
+        <span className={`streamerCountBubble ${liveCount > 0 ? "live" : ""}`}>
+          {liveCount > 0 ? `${liveCount} Live` : "Offline"}
+        </span>
+      </div>
 
       <h2>Progression Roleplay Streamers</h2>
 
@@ -1184,57 +1453,61 @@ function StreamerPage({ streamers }) {
         Watch Progression RP streamers directly from the website.
       </p>
 
-      <div style={{ marginBottom: "20px" }}>
-        <a
-          className="primaryBtn"
-          href="https://www.twitch.tv/login"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Login to Twitch
-        </a>
-      </div>
-
       <div className="streamerGrid">
-        {streamers.length === 0 ? (
-          <div className="eventBubble">
-            <strong>No streamers added yet.</strong>
+        {merged.length === 0 ? (
+          <div className="emptyState streamerEmpty">
+            No streamers have been added yet.
           </div>
         ) : (
-          streamers.map((streamer) => (
-            <div
-              className="streamerCard"
+          merged.map((streamer) => (
+            <article
+              className={`streamerCard ${streamer.live ? "isLive" : "isOffline"}`}
               key={streamer.id}
             >
-              <div className="streamBox">
-                <iframe
-                  src={`https://player.twitch.tv/?channel=${streamer.twitch_username}&parent=${twitchParent}`}
-                  title={`${streamer.name} Twitch Stream`}
-                  allowFullScreen
-                  allow="autoplay; fullscreen"
-                />
+              <div className="streamStatusBubble">
+                {streamer.live ? "LIVE" : "OFFLINE"}
               </div>
 
-              <div className="streamerInfoSmall">
-                <img
-                  src={streamer.profile_image_url}
-                  alt={streamer.name}
-                />
-
-                <div>
-                  <h3>{streamer.name}</h3>
-
+              <div className="streamBox">
+                {streamer.live ? (
+                  <iframe
+                    title={`${streamer.name} Twitch stream`}
+                    src={`https://player.twitch.tv/?channel=${streamer.twitch_username}&parent=${twitchParent}&muted=true`}
+                    allowFullScreen
+                  />
+                ) : (
                   <a
-                    href={`https://twitch.tv/${streamer.twitch_username}`}
+                    className="offlineStreamerLink"
+                    href={`https://www.twitch.tv/${streamer.twitch_username}`}
                     target="_blank"
                     rel="noreferrer"
                   >
-                    @{streamer.twitch_username}
+                    <img
+                      src={streamer.offlineImage}
+                      className="offlineBanner"
+                      alt={`${streamer.name} offline`}
+                    />
+                    <div className="offlineOverlay">
+                      <span>Stream Offline</span>
+                    </div>
                   </a>
-                </div>
+                )}
               </div>
 
-            </div>
+              <div className="streamerInfoSmall">
+                <img src={streamer.profile_image_url || assetUrl("logo.png")} alt="" />
+
+                <div>
+                  <h3>{streamer.name}</h3>
+                  <span>@{streamer.twitch_username}</span>
+                  {streamer.live && (
+                    <small>
+                      {streamer.gameName || "Live now"} for {streamer.viewers} viewers
+                    </small>
+                  )}
+                </div>
+              </div>
+            </article>
           ))
         )}
       </div>
